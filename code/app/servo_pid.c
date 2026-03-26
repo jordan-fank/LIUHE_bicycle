@@ -1,0 +1,147 @@
+#include "servo_pid.h"
+#include "imu_app.h"
+#include "servo_app.h"
+
+// ==================== 全局变量定义 ====================
+PID_T balance_pid = {0};           // 平衡控制PID结构体
+float expect_angle = 0.0f;   // 期望倾角（默认0，用于转弯控制）
+
+/* ==================== NEW: 平衡控制使能标志 ====================
+   0：关闭平衡控制
+   1：允许 balance_control() 真正输出到舵机
+*/
+static uint8_t g_balance_control_enable = 0;
+
+// ==================== PID初始参数 ====================
+#define BALANCE_KP      20.0f      // 角度比例系数
+#define BALANCE_KI      0.25f      // 积分系数（继续增大，消除残余静差）
+#define BALANCE_KD      0.05f       // 角速度系数（回退原值）
+#define BALANCE_LIMIT   250.0f      // PID输出限幅
+#define INTEGRAL_LIMIT  200.0f      // 积分限幅（防止积分饱和）
+
+
+/**
+ * @brief  初始化平衡PID控制器
+ * @param  无
+ * @return 无
+ * @note   在主函数初始化时调用一次
+ */
+void balance_pid_init(void)
+{
+    // 初始化PID结构体
+    // 参数：PID指针, kp, ki, kd, 目标值, 输出限幅
+    pid_init(&balance_pid, BALANCE_KP, BALANCE_KI, BALANCE_KD, 0.0f, BALANCE_LIMIT);
+
+    // 设置积分限幅，防止积分饱和  (-limit) -   (limit)
+    pid_app_limit_integral(&balance_pid, -INTEGRAL_LIMIT, INTEGRAL_LIMIT);
+
+    // 初始化期望角度为0（直线行驶）
+    expect_angle = 0.0f;
+}
+
+/* ==================== NEW: 平衡控制使能接口 ====================
+   关闭控制时：
+   - 清空 PID 历史状态，避免重新打开时积分残留
+   - 让舵机回到中位，避免启动阶段误动作
+*/
+void balance_control_set_enable(uint8_t enable)
+{
+    g_balance_control_enable = enable;
+
+    if (0U == enable)
+    {
+        pid_reset(&balance_pid);
+        servo_set(mid);
+    }
+    else
+    {
+        /* ==================== NEW: 启动控制前再次清空PID状态 ====================
+           目的不是改变原有控制策略，而是避免“重新打开控制”的那个瞬间，
+           因为残留积分项或历史状态导致舵机先打一下。
+        */
+        pid_reset(&balance_pid);
+    }
+}
+
+/**
+ * @brief  核心平衡控制函数
+ * @param  无
+ * @return 无
+ * @note   在5ms定时器中断中调用
+ */
+void balance_control(void)
+{
+    float current_angle;    // 当前角度
+    float current_gyro;     // 当前角速度
+    float angle_error;      // 角度误差
+    float p_out, i_out, d_out;  // PID各项输出
+    float pid_output;       // PID总输出
+    float servo_pwm;        // 舵机PWM值
+
+    /* ==================== NEW: 启动阶段保护 ====================
+       在 IMU 零偏校准、机械零位捕获完成前，不允许平衡控制介入。
+    */
+    if (0U == g_balance_control_enable)
+    {
+        return;
+    }
+
+
+    // 1. 获取传感器数据============ 根据实际安装方向调整X/Y =============
+    // current_angle = roll_kalman;   
+    // current_gyro = gyro_y_rate;    // y轴角速度（deg/s）
+
+
+    // 1. 获取传感器数据 - 使用补偿后的控制角度
+    current_angle = roll_ctrl_angle;    // ✅ 横滚角（左右倾斜）
+    current_gyro = gyro_x_rate;         // ✅ X 轴角速度（左右倾倒速度）
+
+  //================这里注意根据IMU安装方向修改============================//
+
+    // 2. 计算角度误差
+    angle_error = expect_angle - current_angle;
+
+    // 3. 手动计算位置式PID（关键：D项直接使用陀螺仪值）
+    // P项：角度误差的比例控制
+    p_out = balance_pid.kp * angle_error;
+
+    // I项：积分累加（消除静差）
+    balance_pid.integral += angle_error;
+
+    // 积分限幅，防止积分饱和
+    if (balance_pid.integral > INTEGRAL_LIMIT) {
+        balance_pid.integral = INTEGRAL_LIMIT;
+    } else if (balance_pid.integral < -INTEGRAL_LIMIT) {
+        balance_pid.integral = -INTEGRAL_LIMIT;
+    }
+    i_out = balance_pid.ki * balance_pid.integral;
+
+    // D项：直接使用陀螺仪角速度（抑制快速倾倒）
+    d_out = balance_pid.kd * current_gyro;
+
+    // PID总输出
+    pid_output = p_out + i_out + d_out;
+
+    // 保存到结构体（用于调试）
+    balance_pid.p_out = p_out;
+    balance_pid.i_out = i_out;
+    balance_pid.d_out = d_out;
+    balance_pid.error = angle_error;
+
+    // 4. 输出限幅
+    if (pid_output > BALANCE_LIMIT) {
+        pid_output = BALANCE_LIMIT;
+    } else if (pid_output < -BALANCE_LIMIT) {
+        pid_output = -BALANCE_LIMIT;
+    }
+    balance_pid.out = pid_output;
+
+    // 5. 将PID输出映射到舵机PWM范围
+    servo_pwm = mid + pid_output;
+
+    // 6. 发送调试数据
+//    JustFloat_Test_three(current_angle, current_gyro, pid_output);
+
+    // 7. 控制舵机
+    servo_set((uint32_t)servo_pwm);
+}

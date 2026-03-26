@@ -1,0 +1,15 @@
+# Build output
+Debug/
+*.elf
+*.hex
+*.map
+*.mdf
+*.opt
+
+# IDE files
+.settings/
+.spec-workflow/
+%USERPROFILE%/
+
+# Temp files
+删除临时文件.bat

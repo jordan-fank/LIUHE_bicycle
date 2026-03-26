@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="com.rt.hightec.agent.launcher.launchConfigurationType">
+    <stringAttribute key="ACC_HW" value="DAS JDS TriBoard TC3XX V2.0 TBB2NHRQ"/>
+    <booleanAttribute key="ENABLE_AGENTLOG" value="false"/>
+    <booleanAttribute key="ENABLE_FLASHING" value="true"/>
+    <booleanAttribute key="ENABLE_STOPPING" value="true"/>
+    <stringAttribute key="EXECUTABLE_PATH" value="${workspace_loc}/LIUHE_bicycle1/Debug/LIUHE_bicycle1.elf"/>
+    <stringAttribute key="STOP_FUNCTION" value="core0_main"/>
+    <stringAttribute key="SVD" value="D:/AURIX-Studio-1.10.28/build_system/bundled-artefacts-repo/svd/tc26xbpd/1.1-2/device.svd"/>
+    <stringAttribute key="org.eclipse.cdt.launch.PROJECT_ATTR" value="LIUHE_bicycle1"/>
+    <booleanAttribute key="org.eclipse.debug.core.ATTR_FORCE_SYSTEM_CONSOLE_ENCODING" value="false"/>
+    <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+        <listEntry value="/LIUHE_bicycle1"/>
+    </listAttribute>
+    <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+        <listEntry value="4"/>
+    </listAttribute>
+    <stringAttribute key="org.eclipse.debug.ui.ATTR_LOCATION" value="/LIUHE_bicycle1/LIUHE_bicycle1 Debug.launch"/>
+    <stringAttribute key="org.eclipse.debug.ui.ATTR_PROJECT_NAME" value="LIUHE_bicycle1"/>
+    <booleanAttribute key="org.eclipse.debug.ui.ATTR_SHARED" value="true"/>
+    <stringAttribute key="org.eclipse.tcf.debug.MemoryMap" value="[{&quot;FileName&quot;:&quot;E:/AURIX-v1.10.28-workspace/LIUHE_bicycle1/Debug/LIUHE_bicycle1.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS TriBoard TC3XX V2.0 TBB2NHRQ/Core 0: CPU0 TriCore 1.6E&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;c0450dd6-8f83-45a5-a53b-f4e358549918&quot;},{&quot;FileName&quot;:&quot;E:/AURIX-v1.10.28-workspace/LIUHE_bicycle1/Debug/LIUHE_bicycle1.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS TriBoard TC3XX V2.0 TBB2NHRQ/Core 0: CPU0 TriCore 1.6E&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;89d3acd2-8500-40a8-8364-54e81d845fdf&quot;},{&quot;FileName&quot;:&quot;E:/AURIX-v1.10.28-workspace/LIUHE_bicycle1/Debug/LIUHE_bicycle1.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS TriBoard TC3XX V2.0 TBB2NHRQ/Core 0: CPU0 TriCore 1.6E&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;49577daa-b92e-49ce-8d0e-40a443a1b68b&quot;},{&quot;FileName&quot;:&quot;E:/AURIX-v1.10.28-workspace/LIUHE_bicycle1/Debug/LIUHE_bicycle1.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS TriBoard TC3XX V2.0 TBB2NHRQ/Core 1: CPU1 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;8f81f486-57d5-4f6d-915a-b911aa6a9f01&quot;},{&quot;FileName&quot;:&quot;E:/AURIX-v1.10.28-workspace/LIUHE_bicycle1/Debug/LIUHE_bicycle1.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS TriBoard TC3XX V2.0 TBB2NHRQ/Core 0: CPU0 TriCore 1.6E&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;976d3972-a6ea-4827-89fb-a16220989297&quot;},{&quot;FileName&quot;:&quot;E:/AURIX-v1.10.28-workspace/LIUHE_bicycle1/Debug/LIUHE_bicycle1.elf&quot;,&quot;ID&quot;:&quot;/DAS JDS TriBoard TC3XX V2.0 TBB2NHRQ/Core 1: CPU1 TriCore 1.6P&quot;,&quot;Flags&quot;:0,&quot;UUID&quot;:&quot;56a506aa-0a5d-45f2-8454-7fff42d9dff4&quot;}]"/>
+    <stringAttribute key="org.eclipse.tcf.debug.PeerID" value="TCP:127.0.0.1:1534"/>
+    <stringAttribute key="org.eclipse.tcf.debug.ProjectName" value="LIUHE_bicycle1"/>
+    <booleanAttribute key="org.eclipse.tcf.debug.RunLocalAgent" value="false"/>
+    <booleanAttribute key="org.eclipse.tcf.debug.RunLocalServer" value="false"/>
+    <booleanAttribute key="org.eclipse.tcf.debug.UseLocalAgent" value="false"/>
+    <stringAttribute key="org.eclipse.tcf.debug.executable_name" value="${workspace_loc}/LIUHE_bicycle1/Debug/LIUHE_bicycle1.elf"/>
+    <stringAttribute key="sessionID" value="fd55cd92-b9d2-4625-b11f-59bfc8b1428e"/>
+</launchConfiguration>
