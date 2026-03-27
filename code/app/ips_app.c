@@ -274,8 +274,7 @@ void ips_app_init(void)
     draw_full_page();
 }
 
-// 只读行数值缓存，用于判断是否真正变化（最多支持8行只读参数）
-#define MAX_RDONLY_ROWS 8
+
 static float s_rdonly_cache[MAX_RDONLY_ROWS];
 
 // 定时任务：只有只读行的数值发生变化时才重绘，避免闪烁

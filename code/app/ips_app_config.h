@@ -34,6 +34,10 @@
 // 选中指示符 "->" 占 2 字符 = 16px
 #define INDICATOR_W     (2 * 8)
 
+
+// 只读行数值缓存，用于判断是否真正变化（最多支持12行只读参数）
+#define MAX_RDONLY_ROWS 12
+
 //==============================================================================
 // 颜色（白底黑字）
 //==============================================================================
@@ -130,6 +134,7 @@ extern float gyro_y_rate;
 
 extern uint8_t gyro_calibrated;
 
+extern volatile float pwm_angle;
 
 
 
@@ -171,13 +176,15 @@ extern uint8_t gyro_calibrated;
         PARAM_I("calibrated:", &gyro_calibrated,   0,  0, 0, 1),\
         PARAM_F("roll_ctrl:",&roll_ctrl_angle,0,  0, 0, 1, 2), \
         PARAM_F("pitch_ctrl:",&pitch_ctrl_angle,   0,  0, 0, 1, 2), \
+        PARAM_F("pwm_angle:",&pwm_angle,   0,  0, 0, 1, 2), \
         PARAM_I("drop_count:", &g_imu_diag_stat.drop_count,   0,  0, 0, 1)
+        
 
 //测试界面
-#define TEST_PARAM_LIST \
-    PARAM_I("last:",&g_scheduler_stat.last_us ,   0,  0, 0, 1), \
-    PARAM_I("max:", &g_scheduler_stat.max_us,   0,  0, 0, 1), \
-    PARAM_I("drop_count:", &g_imu_diag_stat.drop_count,   0,  0, 0, 1)
+#define TEST_PARAM_LIST PARAM_I("drop_count:", &g_imu_diag_stat.drop_count,   0,  0, 0, 1)
+//    PARAM_I("last:",&g_scheduler_stat.last_us ,   0,  0, 0, 1), \
+//    PARAM_I("max:", &g_scheduler_stat.max_us,   0,  0, 0, 1), \
+
 
 
 

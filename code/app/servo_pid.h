@@ -11,6 +11,7 @@
 /* 仅引入本头文件声明所需的最小依赖，避免和 zf_common_headfile.h 形成循环包含 */
 #include <stdint.h>
 #include "pid_driver.h"
+#include "zf_common_headfile.h"
 
 // ==================== 全局变量声明 ====================
 

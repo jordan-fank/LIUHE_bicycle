@@ -25,7 +25,7 @@ int core0_main(void)
 
 
     imu_all_init();                                  // IMU硬件初始化 + 四元数初始化
-    imu_calibrate_gyro();                            //IMU精确校准耗时60S
+    //imu_calibrate_gyro();                            //IMU精确校准耗时60S
 
     imu_calibrate_gyro_temp();                     // 临时零偏值仅适合快速联调，不适合作为精度验证基准
 

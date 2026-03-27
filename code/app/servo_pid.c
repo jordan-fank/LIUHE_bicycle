@@ -15,9 +15,15 @@ static uint8_t g_balance_control_enable = 0;
 // ==================== PID初始参数 ====================
 #define BALANCE_KP      20.0f      // 角度比例系数
 #define BALANCE_KI      0.25f      // 积分系数（继续增大，消除残余静差）
-#define BALANCE_KD      0.05f       // 角速度系数（回退原值）
+#define BALANCE_KD      0.05f       // 
+
+/* ==================== PID输出限幅 ==================== */
 #define BALANCE_LIMIT   250.0f      // PID输出限幅
 #define INTEGRAL_LIMIT  200.0f      // 积分限幅（防止积分饱和）
+
+//获取目前舵机角度
+volatile float pwm_angle = 90.0f;
+
 
 
 /**
@@ -144,4 +150,12 @@ void balance_control(void)
 
     // 7. 控制舵机
     servo_set((uint32_t)servo_pwm);
+
+    //获取现在转向角度
+    pwm_angle = SERVO_DUTY_TO_ANGLE(servo_pwm);
+
+
+    // 调试输出
+//printf("PWM=%d, Angle=%.2f, PID=%.2f\r\n",
+//           (uint32_t)servo_pwm, pwm_angle, pid_output);
 }

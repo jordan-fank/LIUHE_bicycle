@@ -53,7 +53,7 @@ IFX_INTERRUPT(cc60_pit_ch1_isr, 0, CCU6_0_CH1_ISR_PRIORITY)
     imu_sample_isr();
 
     //舵机平衡调节
-    balance_control();  
+    balance_control();
 }
 
 //PIT3 -- 优先级32

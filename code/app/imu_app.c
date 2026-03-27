@@ -117,12 +117,20 @@ volatile imu_diag_stat_t g_imu_diag_stat = {0};
 //机械零位补偿
 void zero_compensation(void)
 {
-    
- // ========== 关键：等待姿态稳定 ==========
-    // 消费掉至少一帧数据，让 roll_kalman/pitch_kalman 有有效值
-    for (int i = 0; i < 100; i++) {
-        imu_proc();  // 处理数据
-        system_delay_ms(IMU_PERIOD_MS);
+    uint32_t stable_frame_count = 0U;
+    uint32_t last_process_count = g_imu_diag_stat.process_count;
+
+    // 等待足够多的有效姿态帧，而不是固定 delay 轮询。
+    // 这样可以避免初始化阶段与 5ms PIT 节拍锁相，减少 ready 标志反复碰撞。
+    while (stable_frame_count < 100U)
+    {
+        imu_proc();
+
+        if (g_imu_diag_stat.process_count != last_process_count)
+        {
+            last_process_count = g_imu_diag_stat.process_count;
+            stable_frame_count++;
+        }
     }
 
     // ========== 调用机械零位补偿 ==========
@@ -133,14 +141,6 @@ void zero_compensation(void)
     imu_capture_control_zero();  // ✅ 把当前姿态记录为机械零位
 
 
-printf("===== Mechanical Zero Captured =====\r\n");
-printf("  Raw roll  = %.2f°\r\n", roll_kalman);
-printf("  Raw pitch = %.2f°\r\n", pitch_kalman);
-printf("  After compensation:\r\n");
-printf("  roll_ctrl  = %.2f°\r\n", roll_ctrl_angle);
-printf("  pitch_ctrl = %.2f°\r\n", pitch_ctrl_angle);
-printf("====================================\r\n");
- 
 }
 
 
@@ -343,6 +343,7 @@ void imu_sample_isr(void)
 
     /* ==================== TEST ONLY: IMU采样/丢帧统计 ==================== */
     g_imu_diag_stat.sample_count++;
+
     if (g_imu_sample_ready != 0)
     {
         g_imu_diag_stat.drop_count++;

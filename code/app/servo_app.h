@@ -40,26 +40,40 @@
     // 编译提示：当前使用 MG996R 舵机 (50Hz)
 #elif (CURRENT_SERVO_TYPE == SERVO_TYPE_BDS300)
     // BDS300 参数 (330Hz, 周期 3.03ms)
-    // 脉宽范围需根据手册调整，此处使用默认值
+    // 舵机硬件支持：500-2500μs (0°-180°), 50-333Hz可调
+    // 实际应用限制：自行车机械限位 45°-135° → 1000-2000μs
+    // 注意：极限位置由车架机械结构决定，不是舵机电气限制
+    
     #define SERVO_FREQ         330
-    #define SERVO_MIN_US       1000    // 约 1240μs
-    #define SERVO_MID_US       1500    // 约 1520μs
-    #define SERVO_MAX_US       2000    // 约 1820μs
+    #define SERVO_MIN_US       1000    // 机械限位 45°
+    #define SERVO_MID_US       1500    // 中位 90°
+    #define SERVO_MAX_US       2000    // 机械限位 135°
     
-    // #define l_max  4108    // 左极限
-    // #define mid    5016    // 中位
-    // #define r_max  6000    // 右极限
+    // #define l_max  4108    // 500μs @ 330Hz → 0°(硬件极限，不建议使用)
+    // #define mid    5016    // 1500μs @ 330Hz → 90°
+    // #define r_max  6000    // 2500μs @ 330Hz → 180°(硬件极限，不建议使用)
+    //左极限占空比 = 1000*330/1000*10000
 
-    #define l_max  3300    // 对应 1000μs
-    #define mid    4950    // 对应 1500μs
-    #define r_max  6600    // 对应 2000μs
+    #define l_max  3300    // 1000μs @ 330Hz → 45°(机械限位)
+    #define mid    4950    // 1500μs @ 330Hz → 90°
+    #define r_max  6600    // 2000μs @ 330Hz → 135°(机械限位)
     
-    // 编译提示：当前使用 BDS300 舵机 (330Hz)
+    // 编译提示：当前使用 BDS300 舵机 (330Hz, 机械限位 45°-135°)
 
 
 #else
     #error "请选择正确的舵机类型！"
 #endif
+
+
+
+
+// ==================== 角度转换宏(通用公式) ====================
+// 公式来源：逐飞舵机示例代码
+// 占空比 → 角度：angle = 90 × (duty × (1000/freq) / PWM_DUTY_MAX - 0.5)
+// 角度 → 占空比：duty = PWM_DUTY_MAX / (1000/freq) × (0.5 + angle/90)
+#define SERVO_DUTY_TO_ANGLE(duty)     (90.0f * ((duty) * (1000.0f / (float)SERVO_FREQ) / (float)PWM_DUTY_MAX - 0.5f))
+#define SERVO_ANGLE_TO_DUTY(angle)    ((uint32_t)((float)PWM_DUTY_MAX / (1000.0f / (float)SERVO_FREQ) * (0.5f + (float)(angle) / 90.0f)))
 
 
 void servo_set(uint32_t duty);
