@@ -14,7 +14,7 @@ int core0_main(void)
     ips_app_init();                                 //初始化ips
 
 
-    pwm_init(ATOM1_CH1_P33_9, SERVO_FREQ, mid);     //舵机PWM初始化
+    pwm_init(ATOM1_CH1_P33_9, SERVO_FREQ, g_servo_mid_duty);     //舵机PWM初始化
     servo_init();                                   // 舵机初始化
     balance_pid_init();                             //舵机PID平衡调节
 
@@ -56,5 +56,4 @@ int core0_main(void)
         scheduler_run();  // 调度运行
     }
 }
-
 

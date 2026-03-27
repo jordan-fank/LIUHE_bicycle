@@ -26,11 +26,6 @@ float g_motor_kp = 15.0f;
 float g_motor_ki = 0.05f;
 float g_motor_kd = 2.0f;
 
-// 舵机参数
-float g_servo_kp  = 10.0f;
-float g_servo_ki  = 0.02f;
-float g_servo_kd  = 1.5f;
-float g_servo_center = 0.0f;
 
 // 电池 / 状态（由外部赋值）
 float g_bat_voltage  = 12.6f;

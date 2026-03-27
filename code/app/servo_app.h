@@ -33,9 +33,11 @@
     
     // 换算成占空比 (PWM_DUTY_MAX=10000, 周期 20ms)
     // 公式：占空比 = (脉宽 / 周期) × PWM_DUTY_MAX
-    #define l_max  250     // 对应 500μs
-    #define mid    750     // 对应1500μs
-    #define r_max  1250    // 对应2500μs
+#define l_max  (g_servo_left_limit)
+#define mid    (g_servo_mid_duty)
+#define r_max  (g_servo_right_limit)
+
+
     
     // 编译提示：当前使用 MG996R 舵机 (50Hz)
 #elif (CURRENT_SERVO_TYPE == SERVO_TYPE_BDS300)
@@ -79,5 +81,13 @@
 void servo_set(uint32_t duty);
 void servo_test(void);
 void servo_init(void);  // 新增初始化函数
+
+/* ==================== NEW: 舵机参数全局变量 ====================
+   这组变量替代原来的 l_max / mid / r_max 宏定义思路，供控制逻辑和 IPS 页面共用。
+   实际默认值在 servo_app.c 中根据当前舵机类型初始化。
+*/
+extern volatile uint32_t g_servo_left_limit;
+extern volatile uint32_t g_servo_mid_duty;
+extern volatile uint32_t g_servo_right_limit;
 
 #endif /* CODE_APP_SERVO_APP_H_ */

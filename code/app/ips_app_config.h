@@ -106,11 +106,7 @@ extern float g_motor_kp;
 extern float g_motor_ki;
 extern float g_motor_kd;
 
-// 舵机参数
-extern float g_servo_kp;
-extern float g_servo_ki;
-extern float g_servo_kd;
-extern float g_servo_center;
+
 
 // 电池 / 状态（只读显示）
 extern float g_bat_voltage;
@@ -148,6 +144,7 @@ extern volatile float pwm_angle;
 //   PARAM_I(标签, &int32_t变量, 步长, 最小, 最大, 只读(1=只读))
 //==============================================================================
 
+
 // 电机页面
 #define MOTOR_PARAM_LIST \
     PARAM_F("Kp:", &g_motor_kp, 0.1f,  0.0f, 100.0f, 0, 2), \
@@ -156,10 +153,15 @@ extern volatile float pwm_angle;
 
 // 舵机页面
 #define SERVO_PARAM_LIST \
-    PARAM_F("Kp:",     &g_servo_kp,     0.1f,  0.0f,  100.0f, 0, 2), \
-    PARAM_F("Ki:",     &g_servo_ki,     0.01f, 0.0f,   10.0f, 0, 2), \
-    PARAM_F("Kd:",     &g_servo_kd,     0.1f,  0.0f,  100.0f, 0, 2), \
-    PARAM_F("Center:", &g_servo_center, 0.5f, -45.0f,  45.0f, 0, 1)
+    PARAM_F("Kp:",     &g_balance_kp,     0.1f,  0.0f,  100.0f, 0, 2), \
+    PARAM_F("Ki:",     &g_balance_ki,     0.01f, 0.0f,   10.0f, 0, 2), \
+    PARAM_F("Kd:",     &g_balance_kd,     0.1f,  0.0f,  100.0f, 0, 2), \
+    PARAM_F("output_limit:",    &g_balance_output_limit,     1.0f,  0.0f,  300.0f, 0, 2), \
+    PARAM_F("integral_limit:",  &g_balance_integral_limit,   1.0f,  0.0f,  300.0f, 0, 2), \
+    PARAM_I("left_limit:", &g_servo_left_limit,   10,  0, 10000, 0), \
+    PARAM_I("mid_duty:", &g_servo_mid_duty,     10,  0, 10000, 0), \
+    PARAM_I("right_limit:", &g_servo_right_limit,  10,  0, 10000, 0), \
+    PARAM_F("pwm_angle:",&pwm_angle,   0,  0, 0, 1, 2)
 
 // 电池页面
 #define BATTERY_PARAM_LIST \
@@ -184,7 +186,6 @@ extern volatile float pwm_angle;
 #define TEST_PARAM_LIST PARAM_I("drop_count:", &g_imu_diag_stat.drop_count,   0,  0, 0, 1)
 //    PARAM_I("last:",&g_scheduler_stat.last_us ,   0,  0, 0, 1), \
 //    PARAM_I("max:", &g_scheduler_stat.max_us,   0,  0, 0, 1), \
-
 
 
 
