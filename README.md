@@ -266,7 +266,14 @@ imu_capture_control_zero();
 
 **使用建议**：捕获期间保持 IMU 静止，否则会把运动中的姿态错误记录为零位。
 
-### 5.5 机械零位补偿
+### 5.5 CPU0 DSPR 变量放置原则
+
+- `Lcf_Tasking_Tricore_Tc.lsl` 中保持 `LCF_DEFAULT_HOST = LCF_CPU1`
+- 只将 `g_imu_raw_sample`、`g_imu_sample_ready`、`g_imu_diag_stat`、`roll_ctrl_angle`、`gyro_x_rate` 放入 `cpu0_dsram`
+- 上述 5 个变量属于 `CPU0 5ms ISR <-> 主循环` 的共享热路径，手工放入 `cpu0_dsram` 有明确收益
+- 其余 IMU 算法状态、IPS 显示变量和普通全局变量保持默认宿主段，避免因大范围迁移引入隐蔽的数据布局和显示问题
+
+### 5.6 机械零位补偿
 
 当前工程将 IMU 原始姿态与控制零位补偿分开处理：
 
@@ -285,7 +292,7 @@ imu_set_control_zero(4.27f, 0.38f);   // 静止时测得的原始角度
 imu_capture_control_zero();
 ```
 
-### 5.6 IMU 丢帧诊断
+### 5.7 IMU 丢帧诊断
 
 工程保留了调试统计结构体 `g_imu_diag_stat`（`imu_app.h`）：
 

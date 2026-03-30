@@ -103,8 +103,16 @@
 #include "pid_driver.h"
 
 
+#include "motor_app.h"
+#include "motor_pid.h"
 
+#include "small_driver_uart_control.h"
 
+#include "gps_app.h"
+
+#include "lqr_balance.h"
+
+#include "lqr_driver.h"
 
 //=====================================================用户层�û���======================================================
 

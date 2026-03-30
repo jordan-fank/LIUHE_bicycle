@@ -52,6 +52,7 @@ IFX_INTERRUPT(cc60_pit_ch1_isr, 0, CCU6_0_CH1_ISR_PRIORITY)
     // 这里只采原始数据，不做姿态解算，避免 ISR 过重。
     imu_sample_isr();
 
+
     //舵机平衡调节
     balance_control();
 }
@@ -63,6 +64,7 @@ IFX_INTERRUPT(cc61_pit_ch0_isr, 0, CCU6_1_CH0_ISR_PRIORITY)
     pit_clear_flag(CCU61_CH0);    // 清除 CCU61 通道0 PIT 中断标志
 
     // 预留通道：当前未绑定业务逻辑
+    motor_control();                                // 电机速度PID控制（20ms周期）
 }
 
 //PIT4 -- 优先级33
@@ -216,12 +218,15 @@ IFX_INTERRUPT(uart1_tx_isr, 0, UART1_TX_INT_PRIO)
     // 当前未使用 UART1 发送中断
 }
 
+//电机串口1接收中断-获取电机速度
 IFX_INTERRUPT(uart1_rx_isr, 0, UART1_RX_INT_PRIO)
 {
     interrupt_global_enable(0);   // 允许更高优先级中断嵌套
 
-    // 摄像头串口接收回调
-    camera_uart_handler();
+    uart_control_callback();                        // FOC驱动串口接收回调
+
+    // // 摄像头串口接收回调
+    // camera_uart_handler();
 }
 
 // UART2 默认连接无线模块
@@ -246,6 +251,7 @@ IFX_INTERRUPT(uart3_tx_isr, 0, UART3_TX_INT_PRIO)
     interrupt_global_enable(0);   // 允许更高优先级中断嵌套
 
     // 当前未使用 UART3 发送中断
+    gnss_uart_callback();                           // GNSS串口回调函数
 }
 
 IFX_INTERRUPT(uart3_rx_isr, 0, UART3_RX_INT_PRIO)

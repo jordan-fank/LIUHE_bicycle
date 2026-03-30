@@ -12,6 +12,7 @@ int core0_main(void)
     led_init();                                     // 灯初始化
     key_app_init();                                 // 按键初始化
     ips_app_init();                                 //初始化ips
+    gps_init();
 
 
     pwm_init(ATOM1_CH1_P33_9, SERVO_FREQ, g_servo_mid_duty);     //舵机PWM初始化
@@ -39,20 +40,30 @@ int core0_main(void)
 
 
 
+    motor_init();                                    //电机初始化--UART1初始化+开启UART1接受中断        
+    motor_pid_init();                               // 初始化电机速度PID
+    uart_receiver_init();
+    
+    
+    pit_ms_init(CCU61_CH0, 20);     // 定时中断初始化->20MS 串口数据处理
+
+    
+
+
 
     scheduler_init();                               // 调度初始化
     
 
     cpu_wait_event_ready();             // 等待事件就绪
 
-    led_test_all();                     //LED 测试->初始化完成标志
+    led_all_set(LED_ON);                    //LED 测试->初始化完成标志
 
 
-    printf("Init OK\r\n");
+    //printf("Init OK\r\n");
 
     while (1)
     {
-        imu_proc();       // 事件驱动，优先级最高，放在while，减轻中断压力
+        imu_proc();      // 事件驱动，优先级最高，放在while，减轻中断压力
         scheduler_run();  // 调度运行
     }
 }

@@ -34,16 +34,14 @@ typedef struct
     int32_t gyro_z;
 } imu_raw_sample_t;
 
-// 以下数据都是在中断或频繁访问的数据，放在 DSRAM 中
 #pragma section all "cpu0_dsram"
+
+
 
 float roll_kalman = 0;
 float pitch_kalman = 0;
 float yaw_kalman = 0;
-float gyro_x_rate = 0;
 float gyro_y_rate = 0;
-
-
 
 
 
@@ -52,8 +50,29 @@ float gyro_y_rate = 0;
    - roll_kalman / pitch_kalman 保持原始姿态含义，不覆盖
    - roll_ctrl_angle / pitch_ctrl_angle 给控制器使用
 */
-float roll_ctrl_angle = 0;
 float pitch_ctrl_angle = 0;
+
+
+
+
+// 校准完成标志
+uint32_t gyro_calibrated = 0;
+
+
+
+
+float gyro_x_rate = 0;
+float roll_ctrl_angle = 0;
+
+/* ==================== TEST ONLY: IMU采样/丢帧统计 ==================== */
+// ISR 采样结果，主循环消费
+static volatile imu_raw_sample_t g_imu_raw_sample = {0};
+static volatile uint8_t g_imu_sample_ready = 0;
+volatile imu_diag_stat_t g_imu_diag_stat = {0};
+
+/* ==================== TEST ONLY: IMU采样/丢帧统计 ==================== */
+
+
 
 
 
@@ -64,6 +83,9 @@ float pitch_ctrl_angle = 0;
 static float gyro_x_offset = 0.0f;
 static float gyro_y_offset = 0.0f;
 static float gyro_z_offset = 0.0f;
+
+
+
 
 /* ==================== NEW: 机械装配零位补偿值 ====================
    保存“机械零位时，原始姿态角是多少”。
@@ -81,32 +103,6 @@ static float g_pitch_control_zero_deg = 0.0f;
 
 
 
-
-
-
-
-
-
-
-// 校准完成标志
-uint8_t gyro_calibrated = 0;
-
-
-
-
-
-// ISR 采样结果，主循环消费
-static volatile imu_raw_sample_t g_imu_raw_sample = {0};
-static volatile uint8_t g_imu_sample_ready = 0;
-
-
-
-
-
-
-/* ==================== TEST ONLY: IMU采样/丢帧统计 ==================== */
-volatile imu_diag_stat_t g_imu_diag_stat = {0};
-/* ==================== TEST ONLY: IMU采样/丢帧统计 ==================== */
 
 #pragma section all restore
 

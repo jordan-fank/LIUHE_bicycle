@@ -8,12 +8,12 @@ void led_test_all(void)
     uint8 i;
     
 
-//    led_all_set(LED_ON);
-//    system_delay_ms(500);
-//
-//    led_all_set(LED_OFF);
-//    system_delay_ms(200);
-//
+    led_all_set(LED_ON);
+    system_delay_ms(500);
+
+    led_all_set(LED_OFF);
+    system_delay_ms(200);
+
 
     for (i = 1; i <= 4; i++)
     {
@@ -24,10 +24,10 @@ void led_test_all(void)
     }
     
 
-//    led_all_set(LED_ON);
-//    system_delay_ms(300);
-//
-//    led_all_set(LED_OFF);
+    led_all_set(LED_ON);
+    system_delay_ms(300);
+
+    led_all_set(LED_OFF);
 }
 
 

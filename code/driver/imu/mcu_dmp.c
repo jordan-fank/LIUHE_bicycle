@@ -75,14 +75,6 @@ static float Kp = 15.00f;                               /* 比例增益（用于
 static float Ki = 0.0005f;                              /* 积分增益（用于静止状态） */
 static float exInt = 0.0f, eyInt = 0.0f, ezInt = 0.0f;  /* 积分误差累计 */
 
-
-//以下数据放到DSRAM中
-#pragma section all "cpu0_dsram"
-
-
-
-
-
 /* 四元数，表示当前姿态 */
 static float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;
 
@@ -111,13 +103,6 @@ static KalmanFilter yaw_kf = {
     .k = 0.0f,      // 卡尔曼增益
     .init = 0       // 初始化标志
 };
-
-
-#pragma section all restore
-
-
-
-
 /* 状态变量 */
 static float last_yaw_rate = 0.0f;
 static float last_yaw = 0.0f;

@@ -54,7 +54,7 @@ typedef enum
 {
     PAGE_MOTOR = 0,     // 电机 PID 参数
     PAGE_SERVO,         // 舵机 PID 参数
-    PAGE_BATTERY,       // 电池信息（只读）
+    PAGE_GPS,       // 电池信息（只读）
     PAGE_IMU,           // IMU（只读）
     PAGE_TEST,           // 用于测试（只读）
     PAGE_COUNT          // 页面总数，不要删除
@@ -92,6 +92,15 @@ typedef struct
 #define PARAM_I(label, pvar, step, min, max, rdonly) \
     {label, (void*)(pvar), step, min, max, rdonly, 0, 1}
 
+#define PARAM_U32(label, pvar, step, min, max, rdonly) \
+    {label, (void*)(pvar), step, min, max, rdonly, 0, 2}
+
+#define PARAM_U8(label, pvar, step, min, max, rdonly) \
+    {label, (void*)(pvar), step, min, max, rdonly, 0, 3}
+
+#define PARAM_D(label, pvar, step, min, max, rdonly, dec) \
+    {label, (void*)(pvar), step, min, max, rdonly, dec, 4}
+
 
 
 
@@ -101,10 +110,7 @@ typedef struct
 // 全局变量声明（定义在 ips_app.c 中）---第二步
 //==============================================================================
 
-// 电机参数
-extern float g_motor_kp;
-extern float g_motor_ki;
-extern float g_motor_kd;
+
 
 
 
@@ -128,7 +134,7 @@ extern float yaw_kalman;
 extern float gyro_x_rate;
 extern float gyro_y_rate;
 
-extern uint8_t gyro_calibrated;
+extern uint32_t gyro_calibrated;
 
 extern volatile float pwm_angle;
 
@@ -145,11 +151,18 @@ extern volatile float pwm_angle;
 //==============================================================================
 
 
+
+
 // 电机页面
 #define MOTOR_PARAM_LIST \
     PARAM_F("Kp:", &g_motor_kp, 0.1f,  0.0f, 100.0f, 0, 2), \
     PARAM_F("Ki:", &g_motor_ki, 0.01f, 0.0f,  10.0f, 0, 2), \
-    PARAM_F("Kd:", &g_motor_kd, 0.1f,  0.0f, 100.0f, 0, 2)
+    PARAM_F("Kd:", &g_motor_kd, 0.1f,  0.0f, 100.0f, 0, 2), \
+    PARAM_F("output_limit:", &g_motor_output_limit, 10.0f, 0.0f,  10000.0f, 0, 2), \
+    PARAM_F("target_pulse:", &target_speed, 10.0f,  0.0f, 1500.0f, 0, 2), \
+    PARAM_F("target_speed:", &real_target_speed, 0, 0, 0, 1, 2), \
+    PARAM_F("real_pulse:", &real_pulse, 0,  0, 0, 1, 2), \
+    PARAM_F("real_speed:", &real_speed, 0,  0, 0, 1, 2)
 
 // 舵机页面
 #define SERVO_PARAM_LIST \
@@ -163,13 +176,20 @@ extern volatile float pwm_angle;
     PARAM_I("right_limit:", &g_servo_right_limit,  10,  0, 10000, 0), \
     PARAM_F("pwm_angle:",&pwm_angle,   0,  0, 0, 1, 2)
 
-// 电池页面
-#define BATTERY_PARAM_LIST \
-    PARAM_F("Voltage:", &g_bat_voltage,   0, 0, 0, 1, 2), \
-    PARAM_F("Speed:",   &g_vehicle_speed, 0, 0, 0, 1, 1)
+// GPS页面
+#define GPS_PARAM_LIST \
+    PARAM_U8("second:",      &gnss.time.second,    0, 0, 0, 1), \
+    PARAM_U8("state:",       &gnss.state,          0, 0, 0, 1), \
+    PARAM_U8("satellite:",   &gnss.satellite_used, 0, 0, 0, 1), \
+    PARAM_D( "latitude:",    &gnss.latitude,       0, 0, 0, 1, 6), \
+    PARAM_D( "longitude:",   &gnss.longitude,      0, 0, 0, 1, 6), \
+    PARAM_F( "speed:",       &gnss.speed,          0, 0, 0, 1, 1), \
+    PARAM_F( "direction:",   &gnss.direction,      0, 0, 0, 1, 1), \
+    PARAM_F( "height:",      &gnss.height,         0, 0, 0, 1, 1)
+    
 
-// 传感器页面
-#define IMU_PARAM_LIST \
+// IMU 传感器页面
+#define IMU_PARAM_LIST  \
         PARAM_F("roll:", &roll_kalman, 0,  0, 0, 1, 2), \
         PARAM_F("pitch:",&pitch_kalman,0,  0, 0, 1, 2), \
         PARAM_F("yaw:", &yaw_kalman,   0,  0, 0, 1, 2), \

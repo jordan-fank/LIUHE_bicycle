@@ -18,6 +18,8 @@ static task_t scheduler_task[] =
         {key_scan,       10, 0},   // 按键扫描任务，10ms
         {key_task,       10, 0},   // 按键处理任务，10ms
         {ips_app_task,   200, 0},  // 屏幕刷新任务，200ms（只刷新只读数值，按键操作立即响应不依赖此周期）
+        {motor_calculate,10, 0},
+        {gps_task,  10, 0},
         // {servo_test,     10, 0},
 
 };

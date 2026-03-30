@@ -2,9 +2,18 @@
 #include "imu_app.h"
 #include "servo_app.h"
 
+
+
+#pragma section all "cpu0_dsram"
 // ==================== 全局变量定义 ====================
+
+
 PID_T balance_pid = {0};           // 平衡控制PID结构体
 float expect_angle = 0.0f;   // 期望倾角（默认0，用于转弯控制）
+
+
+
+
 
 /* ==================== NEW: 平衡控制参数改为全局变量 ====================
    原来的 PID 宏定义改成全局变量，便于在 IPS 舵机页面直接显示和调节。
@@ -18,6 +27,9 @@ volatile float g_balance_integral_limit = 200.0f;   // 原 INTEGRAL_LIMIT
 
 
 
+
+
+
 /* ==================== NEW: 平衡控制使能标志 ====================
    0：关闭平衡控制
    1：允许 balance_control() 真正输出到舵机
@@ -26,22 +38,12 @@ static uint8_t g_balance_control_enable = 0;
 
 
 
-// // ==================== PID初始参数 ====================
-// #define BALANCE_KP      20.0f      // 角度比例系数
-// #define BALANCE_KI      0.25f      // 积分系数（继续增大，消除残余静差）
-// #define BALANCE_KD      0.05f       // 
-
-// /* ==================== PID输出限幅 ==================== */
-// #define BALANCE_LIMIT   250.0f      // PID输出限幅
-// #define INTEGRAL_LIMIT  200.0f      // 积分限幅（防止积分饱和）
-
-
 
 
 //获取目前舵机角度
 volatile float pwm_angle = 90.0f;
 
-
+#pragma section all restore
 
 /**
  * @brief  初始化平衡PID控制器

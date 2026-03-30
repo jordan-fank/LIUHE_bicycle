@@ -21,10 +21,7 @@
 // 全局变量定义   第0步找到需要显示的数据变量
 //==============================================================================
 
-// 电机参数
-float g_motor_kp = 15.0f;
-float g_motor_ki = 0.05f;
-float g_motor_kd = 2.0f;
+
 
 
 // 电池 / 状态（由外部赋值）
@@ -60,7 +57,7 @@ static uint8  g_sel      = 0;               // 当前选中行索引--第一行
 
 static param_t s_motor_params[] = { MOTOR_PARAM_LIST };
 static param_t s_servo_params[] = { SERVO_PARAM_LIST };
-static param_t s_battery_params[]= { BATTERY_PARAM_LIST };
+static param_t s_gps_params[]= { GPS_PARAM_LIST };
 static param_t s_imu_params[]= { IMU_PARAM_LIST };        //类别注册新的参数列表数组
 static param_t s_test_params[]= { TEST_PARAM_LIST };        //类别注册新的参数列表数组
 
@@ -90,9 +87,9 @@ static param_t *get_params(uint8 *count)
             return s_servo_params;
 
 
-        case PAGE_BATTERY:
-            *count = ARRAY_LEN(s_battery_params);
-            return s_battery_params;
+        case PAGE_GPS:
+            *count = ARRAY_LEN(s_gps_params);
+            return s_gps_params;
 
 
         case PAGE_IMU:
@@ -122,7 +119,7 @@ static const char *get_title(void)
     {
         case PAGE_MOTOR:   return "Motor PID";
         case PAGE_SERVO:   return "Servo PID";
-        case PAGE_BATTERY: return "Battery";
+        case PAGE_GPS: return "GPS";
         case PAGE_IMU: return "IMU";
         case PAGE_TEST: return "TEST";
         default:           return "---";
@@ -184,10 +181,14 @@ static void draw_row(uint8 row_idx, const param_t *p, uint8 selected)
 
     // 数值（右对齐，留右边距）
     char buf[16];
-    if (p->is_int)
-    {
-        sprintf(buf, "%d", *(int32_t*)(p->value));
-    }
+    if (p->is_int == 1)
+        sprintf(buf, "%d",  *(int32_t*)(p->value));
+    else if (p->is_int == 2)
+        sprintf(buf, "%u",  *(uint32_t*)(p->value));
+    else if (p->is_int == 3)
+        sprintf(buf, "%u",  *(uint8_t*)(p->value));
+    else if (p->is_int == 4)
+        sprintf(buf, "%.*f", (int)p->dec, *(double*)(p->value));
     else
     {
         float v = *(float*)(p->value);
@@ -214,8 +215,14 @@ static void draw_value_only(uint8 row_idx, const param_t *p)
 
     // 格式化新数值
     char buf[16];
-    if (p->is_int)
-        sprintf(buf, "%d", *(int32_t*)(p->value));
+    if (p->is_int == 1)
+        sprintf(buf, "%d",  *(int32_t*)(p->value));
+    else if (p->is_int == 2)
+        sprintf(buf, "%u",  *(uint32_t*)(p->value));
+    else if (p->is_int == 3)
+        sprintf(buf, "%u",  *(uint8_t*)(p->value));
+    else if (p->is_int == 4)
+        sprintf(buf, "%.*f", (int)p->dec, *(double*)(p->value));
     else if (p->dec == 1)
         sprintf(buf, "%.1f", (double)*(float*)(p->value));
     else
@@ -229,8 +236,8 @@ static void draw_value_only(uint8 row_idx, const param_t *p)
     if (vx > SCREEN_W) vx = 0;
 
     // 只擦除数值区域（右侧固定宽度），再写入新值
-    // 数值最多7字符（如"-99.99"）= 56px，留足擦除宽度
-    uint16 erase_x = SCREEN_W - ROW_RIGHT - 7 * 8;
+    // 数值最多12字符（如"-116.397428"）= 96px，留足擦除宽度
+    uint16 erase_x = SCREEN_W - ROW_RIGHT - 12 * 8;
     ips_driver_fill_rect(erase_x, y, SCREEN_W - ROW_RIGHT - erase_x, ROW_H, CLR_BG);
     ips_driver_show_str(vx, y + 2, buf, CLR_FG, CLR_BG);
 }
@@ -264,7 +271,7 @@ static void draw_full_page(void)
 void ips_app_init(void)
 {
     ips_driver_init();
-    g_page = PAGE_IMU;
+    g_page = PAGE_GPS;
     g_sel  = 0;
     draw_full_page();
 }
@@ -284,8 +291,12 @@ void ips_app_task(void)
         if (!params[i].rdonly) continue;
 
         // 读取当前值（统一转成 float 做缓存比较）
-        float cur = params[i].is_int ? (float)*(int32_t*)(params[i].value)
-                                     : *(float*)(params[i].value);
+        float cur;
+        if      (params[i].is_int == 1) cur = (float)*(int32_t*)(params[i].value);
+        else if (params[i].is_int == 2) cur = (float)*(uint32_t*)(params[i].value);
+        else if (params[i].is_int == 3) cur = (float)*(uint8_t*)(params[i].value);
+        else if (params[i].is_int == 4) cur = (float)*(double*)(params[i].value);
+        else                            cur = *(float*)(params[i].value);
         if (cur != s_rdonly_cache[i])
         {
             s_rdonly_cache[i] = cur;
