@@ -1,3 +1,10 @@
+/*
+ * 文件: scheduler.h
+ * 功能: 声明简单轮询调度器的初始化和运行接口
+ * 作者: 闫锦
+ * 日期: 2026-03-31
+ */
+
 #ifndef CODE_APP_SCHEDULER_H_
 #define CODE_APP_SCHEDULER_H_
 

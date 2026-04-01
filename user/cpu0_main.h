@@ -1,4 +1,11 @@
 
+/*
+ * 文件: cpu0_main.h
+ * 功能: 声明 CPU0 主入口相关类型和外部对象
+ * 作者: 闫锦
+ * 日期: 2026-03-31
+ */
+
 #ifndef CPU0_MAIN_H
 #define CPU0_MAIN_H
 

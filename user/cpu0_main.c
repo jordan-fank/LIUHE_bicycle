@@ -1,5 +1,13 @@
+/*
+ * 文件: cpu0_main.c
+ * 功能: CPU0 主入口，负责系统初始化、控制链启动和主循环调度
+ * 作者: 闫锦
+ * 日期: 2026-03-31
+ */
+
 #include "cpu0_main.h"
 #include "servo_app.h"
+#include "balance_control_mode.h"
 
 
 
@@ -18,9 +26,11 @@ int core0_main(void)
     pwm_init(ATOM1_CH1_P33_9, SERVO_FREQ, g_servo_mid_duty);     //舵机PWM初始化
     servo_init();                                   // 舵机初始化
     balance_pid_init();                             //舵机PID平衡调节
+    lqr_balance_init();                             // ==================== NEW: LQR平衡控制初始化 ====================
 
 
     balance_control_set_enable(0U);                 //关闭舵机平衡控制，防止干扰IMU校准
+    lqr_balance_set_enable(0U);                     // ==================== NEW: 关闭LQR控制，防止干扰IMU零位捕获 ====================
 
 
 
@@ -36,7 +46,17 @@ int core0_main(void)
 
 
 
-    balance_control_set_enable(1U);                  //重启舵机平衡控制
+
+
+    /* ==================== 平衡控制方案一键切换 ====================
+       这里只根据 balance_control_mode.h 中的宏，决定最终启用 PID 还是 LQR。
+       两套控制器都保留初始化，不打乱现有工程结构。
+    */
+#if (BALANCE_CONTROL_MODE == BALANCE_CONTROL_MODE_PID)
+    balance_control_set_enable(1U);
+#else
+    lqr_balance_set_enable(1U);
+#endif
 
 
 
@@ -67,4 +87,3 @@ int core0_main(void)
         scheduler_run();  // 调度运行
     }
 }
-

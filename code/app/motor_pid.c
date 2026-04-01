@@ -1,9 +1,10 @@
 /*
- * motor_pid.c
- *
- *  Created on: 2025年11月12日
- *      Author: suiyungui
+ * 文件: motor_pid.c
+ * 功能: 电机速度 PID 控制实现，负责速度闭环和目标速度更新
+ * 作者: 闫锦
+ * 日期: 2026-03-31
  */
+
 #include "motor_pid.h"
 #include <math.h>
 
@@ -17,8 +18,7 @@ volatile float g_motor_output_limit = 5000.0f;   // 原 MOTOR_LIMIT
 
 
 PID_T motor_pid;                    // 速度PID结构体
-float target_speed = 600.0f;          // 目标速度（脉冲/20ms）
-float real_target_speed = 0.0f;
+float target_motor_rpm = 600.0f;      // 目标速度（RPM）
 
 SpeedAssist_t speed_assist;         // Speed assist controller
 
@@ -43,14 +43,12 @@ void motor_pid_init(void)
     // 参数: PID指针, kp, ki, kd, 目标值(初始0), 输出限幅
     pid_init(&motor_pid, g_motor_kp, g_motor_ki, g_motor_kd, 0.0f, g_motor_output_limit);
 
-    // // 初始化目标速度为0
-    // target_speed = 600.0f;
 }
 
 /**
  * @brief       电机速度闭环控制函数
  * @details     核心控制逻辑，执行以下步骤:
- *              1. 读取当前速度（编码器值）
+ *              1. 读取当前速度（RPM）
  *              2. 设置目标速度到PID
  *              3. 计算增量式PID输出
  *              4. 输出到电机PWM
@@ -60,37 +58,37 @@ void motor_pid_init(void)
  */
 void motor_control(void)
 {
-    // 1. 获取当前速度（编码器值，单位: 脉冲/20ms）
-    float current_speed = -(float)motor_get_speed();
+    // 1. 获取当前速度（单位: RPM）
+    float current_speed = motor_get_vehicle_rpm();
 
-    real_pulse = current_speed;                         //获取真实的脉冲数
+    motor_speed_rpm = current_speed;                        //电机实际转速
+    motor_speed_m_s = motor_rpm_to_m_s(current_speed);      //电机实际速度
 
     // 2. 设置目标速度
-    pid_set_target(&motor_pid, target_speed);
+    pid_set_target(&motor_pid, target_motor_rpm);
+    target_motor_speed_m_s = motor_rpm_to_m_s(target_motor_rpm);    //电机目标速度
 
     // 3. 计算增量式PID输出
     float pid_output = pid_calculate_incremental(&motor_pid, current_speed);
 
-//    JustFloat_Test_three(target_speed,current_speed,pid_output);
-    // 4. 输出到电机（motor_set会自动限幅到±4000）
+//    JustFloat_Test_three(target_motor_rpm,current_speed,pid_output);
+    // 4. 输出到电机（motor_set会自动限幅到±5000）
     motor_set((int32_t)pid_output);
-
-
-
 
 }
 
 /**
  * @brief       设置目标速度
- * @param       speed   目标速度（单位: 编码器脉冲/20ms）
- *                      正值 = 正转
- *                      负值 = 反转
+ * @param       target_rpm  目标速度（单位: RPM）
+ *                          正值 = 车辆前进方向
+ *                          负值 = 车辆后退方向
  *                      0 = 停止
  * @return      void
  */
-void motor_set_speed(float speed)
+void motor_set_target_rpm(float target_rpm)
 {
-    target_speed = speed;
+    target_motor_rpm = target_rpm;
+    target_motor_speed_m_s = motor_rpm_to_m_s(target_motor_rpm);
 }
 
 /**

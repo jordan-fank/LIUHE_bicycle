@@ -1,0 +1,3 @@
+- generic [ref=e1]:
+  - button "Choose File" [active] [ref=e2]
+  - generic [ref=e3]: ready

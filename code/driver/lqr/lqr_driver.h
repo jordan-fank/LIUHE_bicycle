@@ -21,6 +21,23 @@
 #define LQR_STATE_DIM           3       // 状态维度
 #define LQR_DT                  0.005f  // 控制周期（5ms）
 
+/* ==================== 默认参数与默认增益表生成条件 ====================
+   这一组宏是当前默认增益表所对应的基础条件，也是应用层接入时的默认初值来源。
+   如果后续你要整体更换默认模型参数，应优先在这里统一修改，避免驱动层和应用层各写一套。
+
+   说明：
+   1. h / L / b / g 是模型物理参数
+   2. delta_dot_max / v_min 是默认控制限幅初值
+   3. delta_max 与具体舵机机械极限强相关，通常由应用层按实车限位覆盖
+*/
+#define LQR_DEFAULT_COM_HEIGHT_M         (0.12f)   // h: 质心高度（m）
+#define LQR_DEFAULT_WHEELBASE_M          (0.21f)   // L: 轴距（m）
+#define LQR_DEFAULT_TRAIL_M              (0.02f)   // b: 拖曳距（m）
+#define LQR_DEFAULT_GRAVITY_M_S2         (9.8f)    // g: 重力加速度（m/s^2）
+#define LQR_DEFAULT_DELTA_MAX_RAD        (0.35f)   // 默认最大转向角（rad），应用层可覆盖
+#define LQR_DEFAULT_DELTA_DOT_MAX_RAD_S  (8.0f)    // 默认最大转向角速度（rad/s）
+#define LQR_DEFAULT_V_MIN_M_S            (0.3f)    // 默认最小有效速度（m/s）
+
 // ==================== 物理参数结构体 ====================
 typedef struct {
     float h;            // 质心高度（m）

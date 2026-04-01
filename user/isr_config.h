@@ -1,3 +1,10 @@
+/*
+ * 文件: isr_config.h
+ * 功能: 中断服务对象和优先级配置
+ * 作者: 闫锦
+ * 日期: 2026-03-31
+ */
+
 #ifndef _isr_config_h
 #define _isr_config_h
 

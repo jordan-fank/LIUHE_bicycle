@@ -104,8 +104,6 @@ typedef struct
 
 
 
-
-
 //==============================================================================
 // 全局变量声明（定义在 ips_app.c 中）---第二步
 //==============================================================================
@@ -159,10 +157,10 @@ extern volatile float pwm_angle;
     PARAM_F("Ki:", &g_motor_ki, 0.01f, 0.0f,  10.0f, 0, 2), \
     PARAM_F("Kd:", &g_motor_kd, 0.1f,  0.0f, 100.0f, 0, 2), \
     PARAM_F("output_limit:", &g_motor_output_limit, 10.0f, 0.0f,  10000.0f, 0, 2), \
-    PARAM_F("target_pulse:", &target_speed, 10.0f,  0.0f, 1500.0f, 0, 2), \
-    PARAM_F("target_speed:", &real_target_speed, 0, 0, 0, 1, 2), \
-    PARAM_F("real_pulse:", &real_pulse, 0,  0, 0, 1, 2), \
-    PARAM_F("real_speed:", &real_speed, 0,  0, 0, 1, 2)
+    PARAM_F("target_rpm:", &target_motor_rpm, 10.0f,  -1500.0f, 1500.0f, 0, 2), \
+    PARAM_F("target_m_s:", &target_motor_speed_m_s, 0, 0, 0, 1, 2), \
+    PARAM_F("real_rpm:", &motor_speed_rpm, 0,  0, 0, 1, 2), \
+    PARAM_F("real_m_s:", &motor_speed_m_s, 0,  0, 0, 1, 2)
 
 // 舵机页面
 #define SERVO_PARAM_LIST \

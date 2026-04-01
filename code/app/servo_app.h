@@ -1,24 +1,19 @@
-/*
- * servo_app.h
- *
- *  Created on: 2025年11月11日
- *      Author: suiyungui
- */
 
 #ifndef CODE_APP_SERVO_APP_H_
 #define CODE_APP_SERVO_APP_H_
 
 #include "zf_common_headfile.h"
 
-// ==================== 舵机类型选择 ====================
-// 可选值:
-//   - SERVO_TYPE_MG996R   (50Hz, 调试用)
-//   - SERVO_TYPE_BDS300   (330Hz, 比赛用)
-// ===================================================
+
 #define SERVO_TYPE_MG996R     0
 #define SERVO_TYPE_BDS300     1
 
-// ============ 在这里选择舵机类型 ============
+
+// ==================== 舵机类型选择 ====================
+// 一键切换舵机类型
+//   - SERVO_TYPE_MG996R   (50Hz, 调试用)
+//   - SERVO_TYPE_BDS300   (330Hz, 比赛用)
+// ===================================================
 #define CURRENT_SERVO_TYPE    SERVO_TYPE_MG996R
 // ===========================================
 

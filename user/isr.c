@@ -1,5 +1,13 @@
+/*
+ * 文件: isr.c
+ * 功能: 中断服务入口实现，负责周期采样、控制节拍和外设中断分发
+ * 作者: 闫锦
+ * 日期: 2026-03-31
+ */
+
 #include "isr_config.h"
 #include "isr.h"
+#include "balance_control_mode.h"
 
 /*
  * TC264 / TC264D 中断文件说明
@@ -53,8 +61,18 @@ IFX_INTERRUPT(cc60_pit_ch1_isr, 0, CCU6_0_CH1_ISR_PRIORITY)
     imu_sample_isr();
 
 
-    //舵机平衡调节
+    
+
+    /* ==================== 平衡控制方案一键切换 ====================
+       实际调用哪套平衡控制，由 balance_control_mode.h 中的宏统一决定。
+    */
+#if (BALANCE_CONTROL_MODE == BALANCE_CONTROL_MODE_PID)
     balance_control();
+#else
+    lqr_balance_control();
+#endif
+
+
 }
 
 //PIT3 -- 优先级32

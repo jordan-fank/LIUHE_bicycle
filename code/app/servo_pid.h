@@ -1,10 +1,3 @@
-/*
- * pid_app.h
- *
- *  Created on: 2025年11月12日
- *      Author: suiyungui
- */
-
 #ifndef CODE_APP_PID_APP_H_
 #define CODE_APP_PID_APP_H_
 
@@ -26,17 +19,13 @@ extern volatile float g_balance_ki;
 extern volatile float g_balance_kd;
 extern volatile float g_balance_output_limit;
 extern volatile float g_balance_integral_limit;
-
-
-
+extern volatile float pwm_angle;
 
 // ==================== 函数声明 ====================
-void balance_pid_init(void);                          // 初始化平衡PID
-void balance_control(void);                           // 核心平衡控制函数（10ms中断调用）
-void balance_set_expect_angle(float angle);           // 设置期望倾角
+void balance_pid_init(void);                           // 初始化平衡PID
+void balance_control(void);                            // 核心平衡控制函数（10ms中断调用）
+void balance_set_expect_angle(float angle);            // 设置期望倾角
 void balance_set_params(float kp, float ki, float kd); // 运行时调整PID参数
-
-
 
 /* ==================== NEW: 平衡控制使能开关 ====================
    用途：

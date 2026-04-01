@@ -21,11 +21,17 @@ static float lqr_constrain_float(float val, float min, float max)
     return val;
 }
 
-// ==================== LQR增益表（自动生成）====================
-// 物理参数: h=0.120m, L=0.210m, g=9.80m/s^2
-// LQR权重: Q=diag(100.0, 15.0, 30.0), R=2.0
-// 状态: x = [phi, phi_dot, delta], 输入: u = delta_dot
-// K = [K_phi, K_phi_dot, K_delta]
+// ==================== 默认LQR增益表（离线生成） ====================
+// 生成条件：
+// 1. 物理参数初值使用 lqr_driver.h 中的默认宏：
+//    LQR_DEFAULT_COM_HEIGHT_M / LQR_DEFAULT_WHEELBASE_M / LQR_DEFAULT_GRAVITY_M_S2
+// 2. LQR权重：Q=diag(100.0, 15.0, 30.0), R=2.0
+// 3. 状态: x = [phi, phi_dot, delta], 输入: u = delta_dot
+// 4. K = [K_phi, K_phi_dot, K_delta]
+//
+// 注意：
+// 1. 这张表不是“物理真理”，只是当前项目接入时使用的默认表
+// 2. 如果你的实车 h / L / 速度范围明显不同，这张表需要重算，而不是只改应用层参数
 
 static const LQR_GainEntry_t default_gain_entries[] = {
     {0.5f,  {-214.7704f, -23.9102f, 22.1226f}},  // 低速
@@ -56,16 +62,16 @@ void lqr_init(LQR_Controller_t *ctrl)
 {
     uint8_t i;
 
-    // 默认物理参数（需要实测后调整）
-    ctrl->params.h = 0.30f;     // 质心高度30cm
-    ctrl->params.L = 0.15f;     // 轴距15cm
-    ctrl->params.b = 0.02f;     // 拖曳距2cm
-    ctrl->params.g = 9.8f;
+    // 默认物理参数：与默认增益表的生成条件保持一致
+    ctrl->params.h = LQR_DEFAULT_COM_HEIGHT_M;
+    ctrl->params.L = LQR_DEFAULT_WHEELBASE_M;
+    ctrl->params.b = LQR_DEFAULT_TRAIL_M;
+    ctrl->params.g = LQR_DEFAULT_GRAVITY_M_S2;
 
     // 默认限幅
-    ctrl->delta_max = 0.35f;        // 约20度
-    ctrl->delta_dot_max = 3.0f;     // rad/s
-    ctrl->v_min = 0.3f;             // 最小0.3m/s
+    ctrl->delta_max = LQR_DEFAULT_DELTA_MAX_RAD;
+    ctrl->delta_dot_max = LQR_DEFAULT_DELTA_DOT_MAX_RAD_S;
+    ctrl->v_min = LQR_DEFAULT_V_MIN_M_S;
 
     // 初始化状态
     ctrl->state.phi = 0.0f;

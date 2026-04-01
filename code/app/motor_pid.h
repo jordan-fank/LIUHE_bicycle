@@ -1,3 +1,10 @@
+/*
+ * 文件: motor_pid.h
+ * 功能: 声明电机速度 PID 控制接口、目标量和调参变量
+ * 作者: 闫锦
+ * 日期: 2026-03-31
+ */
+
 #ifndef CODE_APP_MOTOR_PID_H_
 #define CODE_APP_MOTOR_PID_H_
 
@@ -15,12 +22,11 @@ typedef struct {
 } SpeedAssist_t;
 
 extern SpeedAssist_t speed_assist;
-extern float target_speed;         // 目标速度 (单位：脉冲/20ms)
-extern float real_target_speed;
+extern float target_motor_rpm;         // 目标速度 (单位：RPM)
 
 void motor_pid_init(void);                             // 电机 PID 初始化
 void motor_control(void);                              // 电机控制
-void motor_set_speed(float speed);                     // 设置目标速度
+void motor_set_target_rpm(float target_rpm);           // 设置目标电机转速
 void motor_set_params(float kp, float ki, float kd);   // 设置 PID 参数
 void motor_pid_reset(void);                            // 重置 PID 状态
 
@@ -42,4 +48,3 @@ extern volatile float g_motor_output_limit;
 
 
 #endif // CODE_APP_MOTOR_PID_H_
-
