@@ -11,6 +11,11 @@
 #include "lqr_driver.h"
 #include "zf_common_headfile.h"
 
+
+/*===================================================================================*/
+/*这里需要修改对应舵机参数，在servo代码处修改*/
+/*===================================================================================*/
+
 #define LQR_SERVO_MID           mid      // 舵机中位PWM
 #define LQR_SERVO_LEFT          l_max    // 左极限
 #define LQR_SERVO_RIGHT         r_max    // 右极限

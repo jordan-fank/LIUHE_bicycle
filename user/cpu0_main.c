@@ -8,6 +8,8 @@
 #include "cpu0_main.h"
 #include "servo_app.h"
 #include "balance_control_mode.h"
+/* [新增] 无线调试模块头文件 */
+#include "wireless_debug_app.h"
 
 
 
@@ -70,6 +72,13 @@ int core0_main(void)
     
 
 
+
+    /* ========================================================
+     * [新增] 无线调试模块初始化（WiFi SPI + 逐飞助手）
+     * 放在电机初始化之后，确保被监控的变量均已就绪。
+     * 若 WiFi 连接失败，仅打印错误，不影响后续系统启动。
+     * ======================================================== */
+    wireless_debug_init();
 
     scheduler_init();                               // 调度初始化
     

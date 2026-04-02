@@ -15,6 +15,8 @@ volatile float g_motor_ki = 0.4f;          // 原 MOTOR_KI
 volatile float g_motor_kd = 0.8f;          // 原 MOTOR_KD
 volatile float g_motor_output_limit = 5000.0f;   // 原 MOTOR_LIMIT
 
+/* [新增] 电机 PID 输出值，供无线调试模块（wireless_debug_app.c）读取波形 */
+volatile float g_motor_pid_output = 0.0f;
 
 
 PID_T motor_pid;                    // 速度PID结构体
@@ -70,6 +72,9 @@ void motor_control(void)
 
     // 3. 计算增量式PID输出
     float pid_output = pid_calculate_incremental(&motor_pid, current_speed);
+
+    /* [新增] 保存 PID 输出供无线调试波形显示使用 */
+    g_motor_pid_output = pid_output;
 
 //    JustFloat_Test_three(target_motor_rpm,current_speed,pid_output);
     // 4. 输出到电机（motor_set会自动限幅到±5000）

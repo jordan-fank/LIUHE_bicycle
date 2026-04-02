@@ -19,9 +19,9 @@
    2. 本车为轮驱一体，减速比 = 1
    3. 车轮直径 = 64 mm
 */
-#define MOTOR_GEAR_RATIO      1.0f
-#define MOTOR_WHEEL_DIAMETER_M 0.064f
-#define MOTOR_WHEEL_RADIUS_M   (MOTOR_WHEEL_DIAMETER_M * 0.5f)
+#define MOTOR_GEAR_RATIO      1.0f                             // 减速比 = 1
+#define MOTOR_WHEEL_DIAMETER_M 0.064f                          // 车轮直径（m）
+#define MOTOR_WHEEL_RADIUS_M   (MOTOR_WHEEL_DIAMETER_M * 0.5f) // 车轮半径（m）
 
 
 /* 车体方向符号约定：

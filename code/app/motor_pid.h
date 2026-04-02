@@ -46,5 +46,8 @@ extern volatile float g_motor_ki;
 extern volatile float g_motor_kd;
 extern volatile float g_motor_output_limit;
 
+/* [新增] 电机 PID 输出值，供无线调试波形显示读取（由 motor_control() 更新） */
+extern volatile float g_motor_pid_output;
+
 
 #endif // CODE_APP_MOTOR_PID_H_
