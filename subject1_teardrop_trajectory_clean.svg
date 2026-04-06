@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="980" viewBox="0 0 1400 980">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#0f172a"/>
+    </marker>
+    <marker id="pathArrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#dc2626"/>
+    </marker>
+    <style>
+      .title { font: 700 30px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #0f172a; }
+      .sub { font: 500 16px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #475569; }
+      .label { font: 600 16px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #0f172a; }
+      .small { font: 500 14px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #475569; }
+      .pt { font: 700 15px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #0f172a; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="980" fill="#ffffff"/>
+
+  <text x="60" y="58" class="title">科目1 扁水滴型具体轨迹图</text>
+  <text x="60" y="88" class="sub">示意条件：横向可用宽度约 5m，纵向任务距离示例按 24m 绘制。只保留轨迹与点位，不放冗余说明。</text>
+
+  <!-- Main field -->
+  <rect x="150" y="140" width="600" height="760" rx="16" fill="#fafcff" stroke="#94a3b8" stroke-width="2"/>
+
+  <!-- Width dimension -->
+  <line x1="150" y1="116" x2="750" y2="116" stroke="#0f172a" stroke-width="2" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="450" y="104" text-anchor="middle" class="label">约 5m 可用宽度</text>
+
+  <!-- Height dimension -->
+  <line x1="118" y1="140" x2="118" y2="900" stroke="#0f172a" stroke-width="2" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="88" y="530" transform="rotate(-90 88 530)" class="label">示例纵向距离约 24m</text>
+
+  <!-- Start and far zones -->
+  <rect x="170" y="816" width="560" height="64" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="450" y="855" text-anchor="middle" class="label">发车区 / 终点区</text>
+
+  <rect x="170" y="160" width="560" height="74" rx="12" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+  <text x="450" y="205" text-anchor="middle" class="label">掉头区</text>
+
+  <!-- Suggested straight corridors -->
+  <rect x="248" y="236" width="120" height="580" rx="20" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+  <rect x="530" y="236" width="120" height="580" rx="20" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
+  <text x="308" y="262" text-anchor="middle" class="small">去程直线带</text>
+  <text x="590" y="262" text-anchor="middle" class="small">回程直线带</text>
+
+  <!-- Center reference lines -->
+  <line x1="308" y1="250" x2="308" y2="816" stroke="#60a5fa" stroke-width="3" stroke-dasharray="8 10"/>
+  <line x1="590" y1="250" x2="590" y2="816" stroke="#34d399" stroke-width="3" stroke-dasharray="8 10"/>
+
+  <!-- Teardrop trajectory -->
+  <path d="M308 845
+           L308 350
+           C308 285, 345 220, 440 194
+           C560 162, 678 176, 700 248
+           C722 322, 672 394, 602 396
+           C560 397, 535 372, 530 338
+           L530 845"
+        fill="none"
+        stroke="#dc2626"
+        stroke-width="12"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- Direction arrows -->
+  <line x1="308" y1="585" x2="308" y2="500" stroke="#dc2626" stroke-width="6" marker-end="url(#pathArrow)"/>
+  <line x1="520" y1="214" x2="590" y2="196" stroke="#dc2626" stroke-width="6" marker-end="url(#pathArrow)"/>
+  <line x1="530" y1="560" x2="530" y2="645" stroke="#dc2626" stroke-width="6" marker-end="url(#pathArrow)"/>
+
+  <!-- Key points -->
+  <circle cx="308" cy="845" r="10" fill="#fed7aa" stroke="#c2410c" stroke-width="3"/>
+  <circle cx="308" cy="350" r="10" fill="#fef3c7" stroke="#b45309" stroke-width="3"/>
+  <circle cx="700" cy="248" r="10" fill="#fee2e2" stroke="#dc2626" stroke-width="3"/>
+  <circle cx="530" cy="338" r="10" fill="#ddd6fe" stroke="#7c3aed" stroke-width="3"/>
+  <circle cx="530" cy="845" r="10" fill="#a7f3d0" stroke="#047857" stroke-width="3"/>
+
+  <!-- Point labels -->
+  <line x1="318" y1="845" x2="415" y2="845" stroke="#64748b" stroke-width="2"/>
+  <text x="428" y="840" class="pt">ref_start</text>
+  <text x="428" y="862" class="small">起跑参考点 / 漂移锚点</text>
+
+  <line x1="318" y1="350" x2="420" y2="324" stroke="#64748b" stroke-width="2"/>
+  <text x="432" y="320" class="pt">go_wp</text>
+  <text x="432" y="342" class="small">去程入弯基准点</text>
+
+  <line x1="710" y1="248" x2="860" y2="206" stroke="#64748b" stroke-width="2"/>
+  <text x="874" y="202" class="pt">turn_apex_wp</text>
+  <text x="874" y="224" class="small">扁水滴尖点 / 最大转弯顶点</text>
+
+  <line x1="540" y1="338" x2="712" y2="354" stroke="#64748b" stroke-width="2"/>
+  <text x="724" y="350" class="pt">return_entry_wp</text>
+  <text x="724" y="372" class="small">出弯接回程直线入口</text>
+
+  <line x1="540" y1="845" x2="664" y2="845" stroke="#64748b" stroke-width="2"/>
+  <text x="676" y="840" class="pt">stop_wp</text>
+  <text x="676" y="862" class="small">终点，建议落在回程线侧</text>
+
+  <!-- Minimal state labels -->
+  <rect x="815" y="164" width="510" height="736" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="845" y="205" class="label">六阶段对应到这条轨迹上的位置</text>
+
+  <rect x="842" y="240" width="454" height="78" rx="12" fill="#fed7aa" stroke="#c2410c" stroke-width="2"/>
+  <text x="870" y="272" class="pt">1. LAUNCH</text>
+  <text x="870" y="298" class="small">从 ref_start 起步，先稳住平衡，再快速进入去程高速。</text>
+
+  <rect x="842" y="334" width="454" height="78" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="870" y="366" class="pt">2. GO_CRUISE</text>
+  <text x="870" y="392" class="small">沿左侧去程线高速跑，目标是 go_wp。</text>
+
+  <rect x="842" y="428" width="454" height="78" rx="12" fill="#fef3c7" stroke="#b45309" stroke-width="2"/>
+  <text x="870" y="460" class="pt">3. GO_BRAKE</text>
+  <text x="870" y="486" class="small">距 go_wp 一定距离提前减速，不要高速冲到掉头区边缘再硬拐。</text>
+
+  <rect x="842" y="522" width="454" height="92" rx="12" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+  <text x="870" y="554" class="pt">4. UTURN</text>
+  <text x="870" y="580" class="small">切到 turn_apex_wp，用低速走大半径连续弧。</text>
+  <text x="870" y="602" class="small">这一步决定它是不是“扁水滴”，而不是普通硬半圆 U 型。</text>
+
+  <rect x="842" y="630" width="454" height="92" rx="12" fill="#ddd6fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="870" y="662" class="pt">5. RETURN_ACCEL</text>
+  <text x="870" y="688" class="small">切到 return_entry_wp，先回正，再把速度从低速恢复到巡航。</text>
+  <text x="870" y="710" class="small">不要一出弯就立刻满速。</text>
+
+  <rect x="842" y="738" width="454" height="92" rx="12" fill="#a7f3d0" stroke="#047857" stroke-width="2"/>
+  <text x="870" y="770" class="pt">6. RETURN_CRUISE</text>
+  <text x="870" y="796" class="small">沿右侧回程线高速冲向 stop_wp。</text>
+  <text x="870" y="818" class="small">终点最好落在发车区内、回程线自然能命中的位置。</text>
+
+  <text x="150" y="940" class="small">建议：先按这张图做“标准清晰版”，把点位跑通，再微调 apex 的位置与弧形半径去压时间。</text>
+</svg>

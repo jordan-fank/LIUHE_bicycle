@@ -8,6 +8,37 @@
 #include "isr_config.h"
 #include "isr.h"
 #include "balance_control_mode.h"
+#include "nav_app.h"
+#include "servo_pid.h"
+
+
+
+/*========================================================*/
+//中断处理时间测试系统
+/*========================================================*/
+
+volatile uint32_t g_ctrl_5ms_last_us  = 0u;
+volatile uint32_t g_ctrl_5ms_max_us   = 0u;
+volatile uint32_t g_ctrl_5ms_min_us   = 0xFFFFFFFFu;
+volatile uint32_t g_ctrl_5ms_run_count = 0u;
+
+
+static uint32_t isr_elapsed_us(uint32_t start_tick)
+{
+    /* system_getval() 返回 10ns 计数，先做无符号差分再换算为 us。 */
+    return (system_getval() - start_tick) / 100U;
+}
+
+void isr_diag_reset(void)
+{
+    g_ctrl_5ms_last_us   = 0u;
+    g_ctrl_5ms_max_us    = 0u;
+    g_ctrl_5ms_min_us    = 0xFFFFFFFFu;
+    g_ctrl_5ms_run_count = 0u;
+}
+
+
+
 
 /*
  * TC264 / TC264D 中断文件说明
@@ -53,6 +84,10 @@ IFX_INTERRUPT(cc60_pit_ch0_isr, 0, CCU6_0_CH0_ISR_PRIORITY)
 //PIT2 -- 优先级31  --5ms
 IFX_INTERRUPT(cc60_pit_ch1_isr, 0, CCU6_0_CH1_ISR_PRIORITY)
 {
+    float nav_expect_phi = 0.0f;
+
+    uint32_t start_tick  = system_getval();
+
     interrupt_global_enable(0);   // 允许更高优先级中断嵌套
     pit_clear_flag(CCU60_CH1);    // 清除 CCU60 通道1 PIT 中断标志
 
@@ -60,8 +95,16 @@ IFX_INTERRUPT(cc60_pit_ch1_isr, 0, CCU6_0_CH1_ISR_PRIORITY)
     // 这里只采原始数据，不做姿态解算，避免 ISR 过重。
     imu_sample_isr();
 
+    /* 导航闭环接线：
+       统一在 5ms 控制节拍中把导航输出转换为控制器参考量。
+       非导航态明确写 0，避免上一次导航残留参考值继续作用。 */
+    if (g_nav_state == NAV_STATE_NAVIGATING)
+    {
+        nav_expect_phi = g_nav_heading_error * g_nav_heading_gain;
+    }
 
-    
+    balance_set_expect_angle(nav_expect_phi);
+    lqr_set_expect_phi(nav_expect_phi);
 
     /* ==================== 平衡控制方案一键切换 ====================
        实际调用哪套平衡控制，由 balance_control_mode.h 中的宏统一决定。
@@ -72,7 +115,20 @@ IFX_INTERRUPT(cc60_pit_ch1_isr, 0, CCU6_0_CH1_ISR_PRIORITY)
     lqr_balance_control();
 #endif
 
-
+    //测试中断耗时测试，发现目前max==39us,中断状态很好
+    {
+        uint32_t elapsed_us = isr_elapsed_us(start_tick);
+        g_ctrl_5ms_last_us = elapsed_us;
+        if (elapsed_us > g_ctrl_5ms_max_us)
+        {
+            g_ctrl_5ms_max_us = elapsed_us;
+        }
+        if (elapsed_us < g_ctrl_5ms_min_us)
+        {
+            g_ctrl_5ms_min_us = elapsed_us;
+        }
+        g_ctrl_5ms_run_count++;
+    }
 }
 
 //PIT3 -- 优先级32
@@ -268,8 +324,8 @@ IFX_INTERRUPT(uart3_tx_isr, 0, UART3_TX_INT_PRIO)
 {
     interrupt_global_enable(0);   // 允许更高优先级中断嵌套
 
-    // 当前未使用 UART3 发送中断
-    gnss_uart_callback();                           // GNSS串口回调函数
+    // [修复 C3] TX ISR 不应调用接收回调，已移除 gnss_uart_callback()
+    // 原错误：发送完成中断中调用 GNSS 接收回调，可能导致数据帧解析重入
 }
 
 IFX_INTERRUPT(uart3_rx_isr, 0, UART3_RX_INT_PRIO)

@@ -4,6 +4,9 @@
 
 #include "zf_common_headfile.h"
 
+extern double g_gps_latitude_display;
+extern double g_gps_longitude_display;
+
 void gps_init(void);
 
 void gps_task(void);

@@ -22,7 +22,7 @@ typedef struct {
 } SpeedAssist_t;
 
 extern SpeedAssist_t speed_assist;
-extern float target_motor_rpm;         // 目标速度 (单位：RPM)
+extern volatile float target_motor_rpm;         // 目标速度 (单位：RPM)
 
 void motor_pid_init(void);                             // 电机 PID 初始化
 void motor_control(void);                              // 电机控制

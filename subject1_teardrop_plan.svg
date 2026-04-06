@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980">
+  <defs>
+    <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#1e3a5f"/>
+    </marker>
+    <marker id="arrowOrange" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#c2410c"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#047857"/>
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000000" flood-opacity="0.16"/>
+    </filter>
+    <style>
+      .title { font: 700 34px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #1e40af; }
+      .subtitle { font: 600 18px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #3b82f6; }
+      .body { font: 500 16px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #374151; }
+      .small { font: 500 14px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #64748b; }
+      .stageText { font: 700 16px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #374151; }
+      .pointText { font: 700 15px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #1e3a5f; }
+      .dimText { font: 600 15px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #6b7280; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="980" fill="#ffffff"/>
+
+  <text x="56" y="62" class="title">科目1 扁水滴型最快稳定方案</text>
+  <text x="58" y="92" class="subtitle">适用前提：赛道横向可用宽度约 5m，采用 GPS 去程 + GPS 回程，且允许终点不回原起跑点</text>
+
+  <rect x="48" y="126" width="1110" height="802" rx="22" fill="#f8fbff" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="76" y="164" class="subtitle">轨迹图（工程设计示意，不是卫星坐标比例图）</text>
+
+  <rect x="140" y="210" width="980" height="650" rx="18" fill="#ffffff" stroke="#94a3b8" stroke-width="2" stroke-dasharray="12 10"/>
+  <text x="475" y="198" class="dimText">约 5m 可用横向宽度</text>
+  <line x1="170" y1="192" x2="1090" y2="192" stroke="#64748b" stroke-width="2" marker-start="url(#arrowBlue)" marker-end="url(#arrowBlue)"/>
+
+  <rect x="170" y="770" width="920" height="70" rx="14" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="540" y="813" text-anchor="middle" class="stageText">发车区 / 终点区</text>
+
+  <rect x="200" y="250" width="170" height="490" rx="26" fill="#eff6ff" stroke="#60a5fa" stroke-width="2"/>
+  <rect x="890" y="250" width="170" height="490" rx="26" fill="#f0fdf4" stroke="#34d399" stroke-width="2"/>
+  <text x="285" y="278" text-anchor="middle" class="small">去程主通道</text>
+  <text x="975" y="278" text-anchor="middle" class="small">回程主通道</text>
+
+  <line x1="285" y1="770" x2="285" y2="255" stroke="#93c5fd" stroke-width="4" stroke-dasharray="8 10"/>
+  <line x1="975" y1="255" x2="975" y2="770" stroke="#86efac" stroke-width="4" stroke-dasharray="8 10"/>
+
+  <text x="211" y="872" class="small">说明：左线高速去程，右线高速回程，中间不是标准 U 型，而是提前入弯 + 大半径扁水滴回转</text>
+
+  <!-- Trajectory -->
+  <path d="M285 812
+           L285 450"
+        fill="none" stroke="#c2410c" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowOrange)"/>
+  <path d="M285 450
+           L285 300"
+        fill="none" stroke="#1e3a5f" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowBlue)"/>
+  <path d="M285 300
+           C285 230, 330 190, 420 170
+           C620 125, 930 115, 1130 160
+           C1240 185, 1295 245, 1295 325
+           C1295 405, 1245 465, 1150 475
+           C1060 485, 1000 440, 975 370
+           C962 332, 965 292, 975 252"
+        fill="none" stroke="#dc2626" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowOrange)"/>
+  <path d="M975 252
+           L975 430"
+        fill="none" stroke="#6d28d9" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowOrange)"/>
+  <path d="M975 430
+           L975 812"
+        fill="none" stroke="#047857" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowGreen)"/>
+
+  <!-- Stage labels on path -->
+  <rect x="212" y="675" width="146" height="34" rx="10" fill="#fed7aa" stroke="#c2410c" stroke-width="2"/>
+  <text x="285" y="698" text-anchor="middle" class="stageText">LAUNCH</text>
+
+  <rect x="205" y="360" width="160" height="34" rx="10" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="285" y="383" text-anchor="middle" class="stageText">GO_CRUISE</text>
+
+  <rect x="170" y="265" width="145" height="34" rx="10" fill="#fef3c7" stroke="#b45309" stroke-width="2"/>
+  <text x="242" y="288" text-anchor="middle" class="stageText">GO_BRAKE</text>
+
+  <rect x="720" y="84" width="168" height="38" rx="12" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+  <text x="804" y="109" text-anchor="middle" class="stageText">UTURN（扁水滴弧）</text>
+
+  <rect x="1012" y="285" width="172" height="36" rx="10" fill="#ddd6fe" stroke="#6d28d9" stroke-width="2"/>
+  <text x="1098" y="309" text-anchor="middle" class="stageText">RETURN_ACCEL</text>
+
+  <rect x="892" y="560" width="166" height="36" rx="10" fill="#a7f3d0" stroke="#047857" stroke-width="2"/>
+  <text x="975" y="584" text-anchor="middle" class="stageText">RETURN_CRUISE</text>
+
+  <!-- Points -->
+  <g filter="url(#shadow)">
+    <circle cx="285" cy="812" r="11" fill="#fed7aa" stroke="#c2410c" stroke-width="3"/>
+    <circle cx="285" cy="300" r="11" fill="#fef3c7" stroke="#b45309" stroke-width="3"/>
+    <circle cx="1218" cy="178" r="11" fill="#fee2e2" stroke="#dc2626" stroke-width="3"/>
+    <circle cx="975" cy="252" r="11" fill="#ddd6fe" stroke="#6d28d9" stroke-width="3"/>
+    <circle cx="975" cy="812" r="11" fill="#a7f3d0" stroke="#047857" stroke-width="3"/>
+  </g>
+
+  <line x1="298" y1="812" x2="372" y2="812" stroke="#c2410c" stroke-width="2"/>
+  <text x="382" y="808" class="pointText">ref_start</text>
+  <text x="382" y="830" class="small">漂移修正锚点，建议靠去程线</text>
+
+  <line x1="300" y1="300" x2="430" y2="260" stroke="#b45309" stroke-width="2"/>
+  <text x="440" y="255" class="pointText">go_wp</text>
+  <text x="440" y="277" class="small">去程入弯基准点，不要放到最深处</text>
+
+  <line x1="1206" y1="178" x2="1298" y2="126" stroke="#dc2626" stroke-width="2"/>
+  <text x="1308" y="121" class="pointText">turn_apex_wp</text>
+  <text x="1308" y="143" class="small">扁水滴尖点，决定掉头大半径</text>
+
+  <line x1="988" y1="252" x2="1128" y2="228" stroke="#6d28d9" stroke-width="2"/>
+  <text x="1138" y="224" class="pointText">return_entry_wp</text>
+  <text x="1138" y="246" class="small">出弯接回程直线的入口点</text>
+
+  <line x1="988" y1="812" x2="1110" y2="812" stroke="#047857" stroke-width="2"/>
+  <text x="1120" y="808" class="pointText">stop_wp</text>
+  <text x="1120" y="830" class="small">终点，建议放发车区内回程线一侧</text>
+
+  <!-- Explanatory callouts -->
+  <rect x="1188" y="330" width="356" height="254" rx="18" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1212" y="362" class="subtitle">为什么它比标准 U 型更快</text>
+  <text x="1214" y="398" class="body">1. 提前入弯，不是冲到最深处再急拐</text>
+  <text x="1214" y="428" class="body">2. 最大曲率被摊平，单车姿态更稳</text>
+  <text x="1214" y="458" class="body">3. 更早完成回正，更早进入再加速</text>
+  <text x="1214" y="488" class="body">4. 回程不用吸回原线，平行线更自然</text>
+  <text x="1214" y="532" class="small">关键思想：不是最短路径，而是“最快稳定路径”。</text>
+  <text x="1214" y="556" class="small">大半径连续弧，通常比硬半圆更适合单车。</text>
+
+  <rect x="1188" y="610" width="356" height="278" rx="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1212" y="642" class="subtitle">六阶段切换逻辑</text>
+  <text x="1214" y="678" class="body">1. LAUNCH：起步稳住后快速拉升速度</text>
+  <text x="1214" y="706" class="body">2. GO_CRUISE：高速直奔 go_wp</text>
+  <text x="1214" y="734" class="body">3. GO_BRAKE：距 go_wp 一定距离提前减速</text>
+  <text x="1214" y="762" class="body">4. UTURN：切到 turn_apex_wp，锁定低速</text>
+  <text x="1214" y="790" class="body">5. RETURN_ACCEL：切到 return_entry_wp，回正后再加速</text>
+  <text x="1214" y="818" class="body">6. RETURN_CRUISE：切到 stop_wp，全速回终点</text>
+  <text x="1214" y="856" class="small">建议顺序：先把点位摆顺，再调速度，不要反过来。</text>
+
+  <!-- Zone labels -->
+  <text x="188" y="238" class="small">左侧：去程</text>
+  <text x="934" y="238" class="small">右侧：回程</text>
+  <text x="118" y="320" transform="rotate(-90 118 320)" class="dimText">远端 / 掉头区</text>
+  <text x="118" y="825" transform="rotate(-90 118 825)" class="dimText">近端 / 发车区</text>
+
+  <!-- Dim arrows -->
+  <line x1="152" y1="250" x2="152" y2="840" stroke="#94a3b8" stroke-width="2" marker-start="url(#arrowBlue)" marker-end="url(#arrowBlue)"/>
+  <text x="78" y="548" class="dimText" transform="rotate(-90 78 548)">15m ~ 30m 纵向任务距离</text>
+
+  <text x="58" y="950" class="small">文件说明：本图用于科目1 GPS 点位布置与状态机讨论。建议先跑“标准平行 U 型”，再把中间点位微调成扁水滴型。</text>
+</svg>

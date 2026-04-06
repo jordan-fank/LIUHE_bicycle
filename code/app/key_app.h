@@ -3,6 +3,8 @@
 
 #include "zf_common_headfile.h"
 
+extern uint8_t g_active_subject;
+
 void key_task(void);
 
 

@@ -7,11 +7,14 @@
     Z轴：车辆上方
 
     我目前的安装方向：
-    X轴：向后（旋转 180°）
-    Y 轴：向右（旋转180°）
-    Z轴：向下 ← 所以 acc.z = -0.99
+    X轴：向左
+    Y轴：向后
+    Z轴：向上
 
-    所以需要初始化和处理全部加负号
+    因此需要在输入层先做一次坐标映射，再送入后续姿态解算：
+    body_x = -sensor_y
+    body_y =  sensor_x
+    body_z =  sensor_z
 
     如果当前安装方向与上述定义不一致，需要在本文件中先做坐标映射，
     再把数据送给姿态解算。
@@ -225,9 +228,9 @@ void imu_all_init(void)
     imu660rb_get_acc();
 
     Axis3f acc;
-    acc.x = -(float)imu660rb_acc_x / IMU_ACC_LSB_PER_G;
-    acc.y = -(float)imu660rb_acc_y / IMU_ACC_LSB_PER_G;
-    acc.z = -(float)imu660rb_acc_z / IMU_ACC_LSB_PER_G;
+    acc.x = -(float)imu660rb_acc_y / IMU_ACC_LSB_PER_G;
+    acc.y =  (float)imu660rb_acc_x / IMU_ACC_LSB_PER_G;
+    acc.z =  (float)imu660rb_acc_z / IMU_ACC_LSB_PER_G;
 
     imu_init_from_accel(acc);       // 初始化姿态
 
@@ -271,9 +274,9 @@ void imu_calibrate_gyro(void)
 */
 void imu_calibrate_gyro_temp(void)
 {
-    gyro_x_offset = 4.935167;
-    gyro_y_offset = -12.111170;
-    gyro_z_offset = 4.044900;
+    gyro_x_offset = 4.444667;
+    gyro_y_offset = -13.397130;
+    gyro_z_offset = 3.602267;
     gyro_calibrated = 1;
 }
 
@@ -382,14 +385,14 @@ void imu_proc(void)
     /* ==================== TEST ONLY: IMU处理计数 ==================== */
 
     // 加速度值转换
-    acc.x = -(float)raw_sample.acc_x / IMU_ACC_LSB_PER_G;
-    acc.y = -(float)raw_sample.acc_y / IMU_ACC_LSB_PER_G;
-    acc.z = -(float)raw_sample.acc_z / IMU_ACC_LSB_PER_G;
+    acc.x = -(float)raw_sample.acc_y / IMU_ACC_LSB_PER_G;
+    acc.y =  (float)raw_sample.acc_x / IMU_ACC_LSB_PER_G;
+    acc.z =  (float)raw_sample.acc_z / IMU_ACC_LSB_PER_G;
 
     // 陀螺仪值转换（先减零偏再转换单位）
-    gyro.x = -((float)raw_sample.gyro_x - gyro_x_offset) / IMU_GYRO_LSB_PER_DPS;
-    gyro.y = -((float)raw_sample.gyro_y - gyro_y_offset) / IMU_GYRO_LSB_PER_DPS;
-    gyro.z = -((float)raw_sample.gyro_z - gyro_z_offset) / IMU_GYRO_LSB_PER_DPS;
+    gyro.x = -((float)raw_sample.gyro_y - gyro_y_offset) / IMU_GYRO_LSB_PER_DPS;
+    gyro.y =  ((float)raw_sample.gyro_x - gyro_x_offset) / IMU_GYRO_LSB_PER_DPS;
+    gyro.z =  ((float)raw_sample.gyro_z - gyro_z_offset) / IMU_GYRO_LSB_PER_DPS;
 
 
     //IMU_DT_S时基用于积分，和采样周期一致

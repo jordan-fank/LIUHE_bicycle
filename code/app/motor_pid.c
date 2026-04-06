@@ -20,7 +20,7 @@ volatile float g_motor_pid_output = 0.0f;
 
 
 PID_T motor_pid;                    // 速度PID结构体
-float target_motor_rpm = 600.0f;      // 目标速度（RPM）
+volatile float target_motor_rpm = 1000.0f;      // 目标速度（RPM）
 
 SpeedAssist_t speed_assist;         // Speed assist controller
 
@@ -43,7 +43,7 @@ void motor_pid_init(void)
 {
     // 初始化增量式PID
     // 参数: PID指针, kp, ki, kd, 目标值(初始0), 输出限幅
-    pid_init(&motor_pid, g_motor_kp, g_motor_ki, g_motor_kd, 0.0f, g_motor_output_limit);
+    pid_init(&motor_pid, g_motor_kp, g_motor_ki, g_motor_kd, 600.0f, g_motor_output_limit);
 
 }
 

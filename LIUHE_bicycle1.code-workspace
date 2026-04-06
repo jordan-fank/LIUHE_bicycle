@@ -1,0 +1,26 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../suiyungui_example"
+		}
+	],
+	"settings": {
+		"chat.tools.terminal.autoApprove": {
+			"/^Get-Content \"e:\\\\AURIX-v1\\.10\\.28-workspace\\\\suiyungui_example\\\\code\\\\driver\\\\lqr\\\\lqr_driver\\.c\" \\| Measure-Object -Line$/": {
+				"approve": true,
+				"matchCommandLine": true
+			},
+			"/^type \"e:\\\\Desktop\\\\bicycle\\\\TC264_example\\\\E07_06_wifi_spi_udp_demo\\\\code\\\\本文件夹作用\\.txt\"$/": {
+				"approve": true,
+				"matchCommandLine": true
+			},
+			"/^cd \"e:\\\\Desktop\\\\bicycle\\\\TC264_example\\\\E07_07_wifi_spi_tcp_client_demo\" ; dir \\*\\.pdf$/": {
+				"approve": true,
+				"matchCommandLine": true
+			}
+		}
+	}
+}

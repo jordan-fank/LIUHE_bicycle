@@ -14,7 +14,7 @@
 //   - SERVO_TYPE_MG996R   (50Hz, 调试用)
 //   - SERVO_TYPE_BDS300   (330Hz, 比赛用)
 // ===================================================
-#define CURRENT_SERVO_TYPE    SERVO_TYPE_MG996R
+#define CURRENT_SERVO_TYPE    SERVO_TYPE_BDS300
 // ===========================================
 
 
@@ -25,15 +25,7 @@
     #define SERVO_MIN_US       500     // 最小脉宽 500μs
     #define SERVO_MID_US       1500    // 中位脉宽 1500μs
     #define SERVO_MAX_US       2500    // 最大脉宽 2500μs
-    
-    // 换算成占空比 (PWM_DUTY_MAX=10000, 周期 20ms)
-    // 公式：占空比 = (脉宽 / 周期) × PWM_DUTY_MAX
-#define l_max  (g_servo_left_limit)
-#define mid    (g_servo_mid_duty)
-#define r_max  (g_servo_right_limit)
 
-
-    
     // 编译提示：当前使用 MG996R 舵机 (50Hz)
 #elif (CURRENT_SERVO_TYPE == SERVO_TYPE_BDS300)
     // BDS300 参数 (330Hz, 周期 3.03ms)
@@ -45,16 +37,7 @@
     #define SERVO_MIN_US       1000    // 机械限位 45°
     #define SERVO_MID_US       1500    // 中位 90°
     #define SERVO_MAX_US       2000    // 机械限位 135°
-    
-    // #define l_max  4108    // 500μs @ 330Hz → 0°(硬件极限，不建议使用)
-    // #define mid    5016    // 1500μs @ 330Hz → 90°
-    // #define r_max  6000    // 2500μs @ 330Hz → 180°(硬件极限，不建议使用)
-    //左极限占空比 = 1000*330/1000*10000
 
-    #define l_max  3300    // 1000μs @ 330Hz → 45°(机械限位)
-    #define mid    4950    // 1500μs @ 330Hz → 90°
-    #define r_max  6600    // 2000μs @ 330Hz → 135°(机械限位)
-    
     // 编译提示：当前使用 BDS300 舵机 (330Hz, 机械限位 45°-135°)
 
 
@@ -84,5 +67,10 @@ void servo_init(void);  // 新增初始化函数
 extern volatile uint32_t g_servo_left_limit;
 extern volatile uint32_t g_servo_mid_duty;
 extern volatile uint32_t g_servo_right_limit;
+
+/* 统一给 PID / LQR 使用同一组运行时舵机边界，避免编译期常量与实际输出尺度不一致 */
+#define l_max  (g_servo_left_limit)
+#define mid    (g_servo_mid_duty)
+#define r_max  (g_servo_right_limit)
 
 #endif /* CODE_APP_SERVO_APP_H_ */

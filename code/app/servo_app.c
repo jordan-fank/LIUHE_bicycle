@@ -16,9 +16,10 @@ volatile uint32_t g_servo_left_limit = 250U;     // 原 l_max，对应 500us
 volatile uint32_t g_servo_mid_duty = 750U;       // 原 mid，对应 1500us
 volatile uint32_t g_servo_right_limit = 1250U;   // 原 r_max，对应 2500us
 #elif (CURRENT_SERVO_TYPE == SERVO_TYPE_BDS300)
-volatile uint32_t g_servo_left_limit = 250U;     // 按当前工程默认值初始化，可后续在 IPS 中调节
-volatile uint32_t g_servo_mid_duty = 750U;
-volatile uint32_t g_servo_right_limit = 1250U;
+/* BDS300 使用 330Hz PWM，当前工程按 45° / 90° / 135° 的机械限位初始化 */
+volatile uint32_t g_servo_left_limit = 2186;    // 1000us @ 330Hz--3300
+volatile uint32_t g_servo_mid_duty = 3686;      // 1500us @ 330Hz--4950
+volatile uint32_t g_servo_right_limit = 5186;   // 2000us @ 330Hz--6600U
 #else
 volatile uint32_t g_servo_left_limit = 250U;
 volatile uint32_t g_servo_mid_duty = 750U;

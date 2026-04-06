@@ -8,6 +8,14 @@
 #include "scheduler.h"
 /* [新增] 无线调试模块任务声明 */
 #include "wireless_debug_app.h"
+/* [新增] GPS/IMU 导航模块任务声明 */
+#include "nav_app.h"
+/* [新增 科目1] */
+#include "subject1_app.h"
+/* [新增 科目2] */
+#include "subject2_app.h"
+/* [新增 科目3] */
+#include "subject3_app.h"
 
 //scheduler_stat_t g_scheduler_stat = {
 //    .min_us = 0xFFFFFFFFu
@@ -29,6 +37,13 @@ static task_t scheduler_task[] =
         {ips_app_task,          200, 0},   // 屏幕刷新任务，200ms（只刷新只读数值，按键操作立即响应不依赖此周期）
         {gps_task,              10,  0},   // GPS 数据处理，10ms
         {wireless_debug_task,   50,  0},   // 无线调试任务：50ms 周期，负责参数接收 + 波形发送
+        {nav_app_task,          100, 0},   // [新增] 导航任务：100ms 周期，GPS/IMU 航向误差计算
+        {subject1_task,         100, 0},   // [新增 科目1] 科目1状态机：速度管理+状态转移，100ms
+        {subject2_task,         100, 0},   // [新增 科目2] 科目2状态机：IMU八字绕桩，100ms
+        {subject3_task,         100, 0},   // [新增 科目3] 科目3状态机：多路点导航+反向回程，100ms
+        //{servo_test,          10, 0},
+        //{motor_test,          10, 0},
+
 
 };
 

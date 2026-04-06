@@ -18,6 +18,8 @@
 #include "servo_pid.h"
 #include "motor_app.h"
 #include "imu_app.h"
+/* [新增] 导航模块变量（g_nav_heading_error / g_nav_heading_gain）*/
+#include "nav_app.h"
 
 /* ===========================================================
  * 模块内部状态
@@ -25,33 +27,35 @@
 static uint8_t g_wifi_connected = 0;   // 0=未连接，1=已连接并可用
 
 /* ===========================================================
- * 逐飞助手参数通道映射
- * 与 PC 端通道号一一对应（库内部 channel 从 1 开始，数组下标从 0 开始）
+ * 逐飞助手参数通道映射（面向比赛调参，8 通道全部占用）
+ * 与 PC 端通道号一一对应（数组下标从 0 对应 PC 端 CH1）
  * =========================================================== */
 typedef enum
 {
-    PARAM_CH_BALANCE_KP   = 0,   // CH1: 舵机平衡 Kp
-    PARAM_CH_BALANCE_KI   = 1,   // CH2: 舵机平衡 Ki
-    PARAM_CH_BALANCE_KD   = 2,   // CH3: 舵机平衡 Kd
-    PARAM_CH_MOTOR_KP     = 3,   // CH4: 电机速度 Kp
-    PARAM_CH_MOTOR_KI     = 4,   // CH5: 电机速度 Ki
-    PARAM_CH_MOTOR_KD     = 5,   // CH6: 电机速度 Kd
-    PARAM_CH_MOTOR_SPEED  = 6,   // CH7: 目标电机转速 (RPM)
-    PARAM_CH_RESERVED     = 7,   // CH8: 预留，不处理
+    PARAM_CH_BALANCE_KP     = 0,   // CH1: 外环角度 Kp（三种模式通用）
+    PARAM_CH_BALANCE_KI     = 1,   // CH2: 外环角度 Ki
+    PARAM_CH_BALANCE_KD     = 2,   // CH3: SIMPLE_PD 模式 D 项（陀螺系数）
+    PARAM_CH_INNER_KP       = 3,   // CH4: [新增] CASCADE 内环角速率 Kp
+    PARAM_CH_INNER_KI       = 4,   // CH5: [新增] CASCADE 内环角速率 Ki
+    PARAM_CH_NAV_GAIN       = 5,   // CH6: [新增] 导航航向误差→侧倾角增益
+    PARAM_CH_MOTOR_SPEED    = 6,   // CH7: 目标电机转速（RPM）
+    PARAM_CH_CTRL_MODE      = 7,   // CH8: [新增] 舵机控制模式(0/1/2)
 } param_channel_enum;
 
 /* ===========================================================
- * 逐飞助手波形通道映射
+ * 逐飞助手波形通道映射（8 通道，覆盖平衡 + 速度 + 导航）
  * =========================================================== */
 typedef enum
 {
-    OSC_CH_ROLL_ANGLE     = 0,   // CH1: 补偿后横滚角（°）
-    OSC_CH_SERVO_OUTPUT   = 1,   // CH2: 舵机 PID 输出值
-    OSC_CH_MOTOR_RPM      = 2,   // CH3: 电机实际转速（RPM）
-    OSC_CH_MOTOR_OUTPUT   = 3,   // CH4: 电机 PID 输出值
-    OSC_CH_TARGET_RPM     = 4,   // CH5: 目标转速（RPM）
-    OSC_CH_PITCH_ANGLE    = 5,   // CH6: 补偿后俯仰角（°）
-    OSC_CH_COUNT          = 6,   // 实际使用通道数
+    OSC_CH_ROLL_ANGLE       = 0,   // CH1: 补偿后横滚角（°）
+    OSC_CH_SERVO_OUTPUT     = 1,   // CH2: 舵机最终输出（duty counts）
+    OSC_CH_MOTOR_RPM        = 2,   // CH3: 电机实际转速（RPM）
+    OSC_CH_MOTOR_SPEED_MS   = 3,   // CH4: [新增] 车体线速度（m/s）
+    OSC_CH_NAV_HEADING_ERR  = 4,   // CH5: [新增] 导航航向误差（°）
+    OSC_CH_YAW              = 5,   // CH6: [新增] IMU 偏航角（°，导航调试）
+    OSC_CH_MOTOR_OUTPUT     = 6,   // CH7: 电机 PID 输出值
+    OSC_CH_TARGET_RPM       = 7,   // CH8: 目标转速（RPM）
+    OSC_CH_COUNT            = 8,   // 实际使用通道数（全部8通道）
 } oscilloscope_channel_enum;
 
 /* ===========================================================
@@ -93,12 +97,12 @@ void wireless_debug_init(void)
 
     g_wifi_connected = 1;
     printf("[WIRELESS] WiFi debug init OK. Module IP: %s\r\n", wifi_spi_ip_addr_port);
-    printf("[WIRELESS] Param CH1~CH7: balance_kp/ki/kd, motor_kp/ki/kd, target_rpm\r\n");
-    printf("[WIRELESS] Osc  CH1~CH6: roll_angle, servo_out, motor_rpm, motor_out, target_rpm, pitch_angle\r\n");
+    printf("[WIRELESS] Param CH1~CH8: kp/ki/kd inner_kp/ki nav_gain target_rpm ctrl_mode\r\n");
+    printf("[WIRELESS] Osc   CH1~CH8: roll servo_out rpm speed_ms nav_err yaw motor_out target_rpm\r\n");
 }
 
 /* ===========================================================
- * 内部函数：参数接收与分发
+ * 内部函数：参数接收与分发--调参
  * 注意：volatile float 的单次写入在 TC264D 上是原子操作，
  *       中断中读取这些参数是安全的。
  * =========================================================== */
@@ -125,50 +129,64 @@ static void wireless_apply_params(void)
         switch((param_channel_enum)ch)
         {
             case PARAM_CH_BALANCE_KP:
-                /* 直接写 volatile 变量，servo_pid.c 的 balance_control() 每次都同步该值 */
                 g_balance_kp = val;
+#if WIRELESS_DEBUG_PRINTF_ENABLE
                 printf("[WIRELESS] balance_kp = %.4f\r\n", val);
+#endif
                 break;
 
             case PARAM_CH_BALANCE_KI:
                 g_balance_ki = val;
+#if WIRELESS_DEBUG_PRINTF_ENABLE
                 printf("[WIRELESS] balance_ki = %.4f\r\n", val);
+#endif
                 break;
 
             case PARAM_CH_BALANCE_KD:
                 g_balance_kd = val;
+#if WIRELESS_DEBUG_PRINTF_ENABLE
                 printf("[WIRELESS] balance_kd = %.4f\r\n", val);
+#endif
                 break;
 
-            case PARAM_CH_MOTOR_KP:
-                /* 直接写 volatile 变量，motor_pid.c 的 motor_control() 下次执行时会使用 */
-                g_motor_kp = val;
-                /* 同步更新 PID 结构体，让变化立即生效（增量式PID依赖结构体参数） */
-                motor_set_params(g_motor_kp, g_motor_ki, g_motor_kd);
-                printf("[WIRELESS] motor_kp = %.4f\r\n", val);
+            case PARAM_CH_INNER_KP:
+                g_balance_inner_kp = val;
+#if WIRELESS_DEBUG_PRINTF_ENABLE
+                printf("[WIRELESS] inner_kp = %.4f\r\n", val);
+#endif
                 break;
 
-            case PARAM_CH_MOTOR_KI:
-                g_motor_ki = val;
-                motor_set_params(g_motor_kp, g_motor_ki, g_motor_kd);
-                printf("[WIRELESS] motor_ki = %.4f\r\n", val);
+            case PARAM_CH_INNER_KI:
+                g_balance_inner_ki = val;
+#if WIRELESS_DEBUG_PRINTF_ENABLE
+                printf("[WIRELESS] inner_ki = %.4f\r\n", val);
+#endif
                 break;
 
-            case PARAM_CH_MOTOR_KD:
-                g_motor_kd = val;
-                motor_set_params(g_motor_kp, g_motor_ki, g_motor_kd);
-                printf("[WIRELESS] motor_kd = %.4f\r\n", val);
+            case PARAM_CH_NAV_GAIN:
+                g_nav_heading_gain = val;
+#if WIRELESS_DEBUG_PRINTF_ENABLE
+                printf("[WIRELESS] nav_heading_gain = %.4f\r\n", val);
+#endif
                 break;
 
             case PARAM_CH_MOTOR_SPEED:
-                /* 通过已有 API 设置，内部会同步 target_motor_speed_m_s */
                 motor_set_target_rpm(val);
+#if WIRELESS_DEBUG_PRINTF_ENABLE
                 printf("[WIRELESS] target_rpm = %.1f\r\n", val);
+#endif
                 break;
 
-            case PARAM_CH_RESERVED:
+            case PARAM_CH_CTRL_MODE:
+                /* [修复 H3] 切换时立即清零外环积分 */
+                g_servo_control_mode = (uint8_t)(uint32_t)val;
+                balance_pid.integral = 0.0f;
+#if WIRELESS_DEBUG_PRINTF_ENABLE
+                printf("[WIRELESS] ctrl_mode = %u\r\n", (unsigned)g_servo_control_mode);
+#endif
+                break;
+
             default:
-                /* 预留通道，忽略 */
                 break;
         }
     }
@@ -181,18 +199,18 @@ static void wireless_send_oscilloscope(void)
 {
     seekfree_assistant_oscilloscope_struct osc;
 
-    /* 填充 6 个波形通道的实时数据 */
-    osc.data[OSC_CH_ROLL_ANGLE]   = roll_ctrl_angle;    /* 补偿后横滚角（°） */
-    osc.data[OSC_CH_SERVO_OUTPUT] = balance_pid.out;    /* 舵机 PID 输出值（balance_pid 定义在 servo_pid.c） */
-    osc.data[OSC_CH_MOTOR_RPM]    = motor_speed_rpm;    /* 电机实际转速（RPM） */
-    osc.data[OSC_CH_MOTOR_OUTPUT] = g_motor_pid_output; /* 电机 PID 输出值（见 motor_pid.c）*/
-    osc.data[OSC_CH_TARGET_RPM]   = target_motor_rpm;   /* 目标转速（RPM） */
-    osc.data[OSC_CH_PITCH_ANGLE]  = pitch_ctrl_angle;   /* 补偿后俯仰角（°） */
+    /* 填充 8 个波形通道（覆盖平衡控制 + 速度 + 导航调试）*/
+    osc.data[OSC_CH_ROLL_ANGLE]      = roll_kalman;       /* 补偿后横滚角（°）roll_ctrl_angle*/
+    osc.data[OSC_CH_SERVO_OUTPUT]    = g_balance_pid_output;   /* 舵机最终输出（duty counts）*/
+    osc.data[OSC_CH_MOTOR_RPM]       = motor_speed_rpm;        /* 电机实际转速（RPM）*/
+    osc.data[OSC_CH_MOTOR_SPEED_MS]  = motor_speed_m_s;        /* [新增] 车体线速度（m/s）*/
+    osc.data[OSC_CH_NAV_HEADING_ERR] = g_nav_heading_error;    /* [新增] 导航航向误差（°）*/
+    osc.data[OSC_CH_YAW]             = yaw_kalman;             /* [新增] IMU 偏航角（°）*/
+    osc.data[OSC_CH_MOTOR_OUTPUT]    = g_motor_pid_output;     /* 电机 PID 输出值 */
+    osc.data[OSC_CH_TARGET_RPM]      = target_motor_rpm;       /* 目标转速（RPM）*/
 
-    /* 告知库本次使用 6 个通道（内部按通道数计算包长，节省带宽） */
-    osc.channel_num = (uint8_t)OSC_CH_COUNT;
+    osc.channel_num = (uint8_t)OSC_CH_COUNT;   /* 8 通道全部发送 */
 
-    /* 发送到 PC 逐飞助手波形窗口 */
     seekfree_assistant_oscilloscope_send(&osc);
 }
 

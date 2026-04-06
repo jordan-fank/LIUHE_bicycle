@@ -81,7 +81,8 @@
 #define UART1_ER_INT_PRIO        15
 
 // UART2：当前工程默认连接无线模块
-#define UART2_INT_SERVICE        IfxSrc_Tos_cpu1        //遥控器使用2通信，放在CPU1
+// 当前 UART2 的 ISR 入口均定义在 CPU0，因此服务核必须与 ISR 归属保持一致。
+#define UART2_INT_SERVICE        IfxSrc_Tos_cpu0
 #define UART2_TX_INT_PRIO        16
 #define UART2_RX_INT_PRIO        17
 #define UART2_ER_INT_PRIO        18

@@ -33,12 +33,15 @@ void motor_set(int32_t duty)
 }
 
 
-
+void motor_test(void)
+{
+    motor_set(800);   // 先小占空比试，别一上来太大
+}
 
 
  /*============================统一获取电机速度接口====================*/
-
-// 获取原始速度反馈（单位：RPM，保留驱动原始符号）
+//receive_right_speed_data
+// 获取原始速度反馈（单位：RPM，保留驱动原始符号）motor_value.receive_left_speed_data
 int16 motor_get_raw_rpm(void)
 {
     return motor_value.receive_left_speed_data;

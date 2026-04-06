@@ -1,5 +1,5 @@
 /**
- * 
+ *
  * 添加页面操作：
  * 0.需要显示的数据变量
  * 1.注册页面                  ->  ips_app——config.h
@@ -10,139 +10,95 @@
  * 6.注册标题                  ->  ips_app.c
  */
 
-
 #include "ips_app.h"
 #include "ips_driver.h"
 
-
-
-
 //==============================================================================
-// 全局变量定义   第0步找到需要显示的数据变量
+// 全局变量定义
 //==============================================================================
-
-
-
-
-// 电池 / 状态（由外部赋值）
-float g_bat_voltage  = 12.6f;
+float g_bat_voltage   = 12.6f;
 float g_vehicle_speed = 0.0f;
-
-
-//传感器
-float speed  = 25.6f;
-int32_t temp  = 12;
-float hum = 21.0f;
-
-
-
-
-
+float speed           = 25.6f;
+int32_t temp          = 12;
+float hum             = 21.0f;
 
 //==============================================================================
 // 内部状态
 //==============================================================================
-
-static page_e g_page     = PAGE_IMU;      //当前选中的页面--电机界面
-static uint8  g_sel      = 0;               // 当前选中行索引--第一行
-
-
-
-
-
+static page_e g_page = PAGE_HOME;
+static uint8  g_sel  = 0;
 
 //==============================================================================
-// 页面参数表（静态，只初始化一次）     --第四步
+// 页面参数表
 //==============================================================================
-
+static param_t s_home_params[]  = { HOME_PARAM_LIST };
 static param_t s_motor_params[] = { MOTOR_PARAM_LIST };
 static param_t s_servo_params[] = { SERVO_PARAM_LIST };
-static param_t s_gps_params[]= { GPS_PARAM_LIST };
-static param_t s_imu_params[]= { IMU_PARAM_LIST };        //类别注册新的参数列表数组
-static param_t s_test_params[]= { TEST_PARAM_LIST };        //类别注册新的参数列表数组
-
-
-
-
+static param_t s_gps_params[]   = { GPS_PARAM_LIST };
+static param_t s_imu_params[]   = { IMU_PARAM_LIST };
+static param_t s_test_params[]  = { TEST_PARAM_LIST };
+static param_t s_subj1_params[] = { SUBJ1_PARAM_LIST };
+static param_t s_subj2_params[] = { SUBJ2_PARAM_LIST };
+static param_t s_subj3_params[] = { SUBJ3_PARAM_LIST };
 
 #define ARRAY_LEN(arr)  (sizeof(arr) / sizeof((arr)[0]))
 
-
-
-
-//==============================================================================
-// 返回当前页面的参数数组和长度     --第五步
-//==============================================================================
 static param_t *get_params(uint8 *count)
 {
     switch (g_page)
     {
+        case PAGE_HOME:
+            *count = ARRAY_LEN(s_home_params);
+            return s_home_params;
         case PAGE_MOTOR:
             *count = ARRAY_LEN(s_motor_params);
             return s_motor_params;
-
-
         case PAGE_SERVO:
             *count = ARRAY_LEN(s_servo_params);
             return s_servo_params;
-
-
         case PAGE_GPS:
             *count = ARRAY_LEN(s_gps_params);
             return s_gps_params;
-
-
         case PAGE_IMU:
             *count = ARRAY_LEN(s_imu_params);
             return s_imu_params;
-
-
         case PAGE_TEST:
             *count = ARRAY_LEN(s_test_params);
             return s_test_params;
-
-
+        case PAGE_SUBJ1:
+            *count = ARRAY_LEN(s_subj1_params);
+            return s_subj1_params;
+        case PAGE_SUBJ2:
+            *count = ARRAY_LEN(s_subj2_params);
+            return s_subj2_params;
+        case PAGE_SUBJ3:
+            *count = ARRAY_LEN(s_subj3_params);
+            return s_subj3_params;
         default:
             *count = 0;
             return NULL;
     }
 }
 
-
-//==============================================================================
-// 返回当前页面标题     --第六步
-//==============================================================================
-
 static const char *get_title(void)
 {
     switch (g_page)
     {
-        case PAGE_MOTOR:   return "Motor PID";
-        case PAGE_SERVO:   return "Servo PID";
-        case PAGE_GPS: return "GPS";
-        case PAGE_IMU: return "IMU";
-        case PAGE_TEST: return "TEST";
-        default:           return "---";
+        case PAGE_HOME:  return "HOME";
+        case PAGE_MOTOR: return "Motor PID";
+        case PAGE_SERVO: return "Servo PID";
+        case PAGE_GPS:   return "GPS";
+        case PAGE_IMU:   return "IMU";
+        case PAGE_TEST:  return "TEST";
+        case PAGE_SUBJ1: return "SUBJ1";
+        case PAGE_SUBJ2: return "SUBJ2";
+        case PAGE_SUBJ3: return "SUBJ3";
+        default:         return "---";
     }
 }
 
-
-
-
-
-
-
-
-
-
 /*---------------------------------以下代码是辅助函数，无需修改---------------------------------------------*/
 
-
-//==============================================================================
-// 绘图辅助（局部刷新，不清全屏）
-//==============================================================================
-
-// 标题居中显示，下方画分隔线
 static void draw_title(void)
 {
     const char *title = get_title();
@@ -150,36 +106,26 @@ static void draw_title(void)
     const char *p = title;
     while (*p++) len++;
     uint16 tx = (SCREEN_W - (uint16)len * 8) / 2;
-    if (tx > SCREEN_W) tx = 0;  // 防止上溢
+    if (tx > SCREEN_W) tx = 0;
 
-    // 清标题区域
     ips_driver_fill_rect(0, 0, SCREEN_W, TITLE_H, CLR_BG);
     ips_driver_show_str(tx, 0, title, CLR_FG, CLR_BG);
-    // 分隔线
     ips_driver_hline(0, TITLE_H, SCREEN_W, CLR_FG);
 }
 
-// 绘制单行参数
-//   row_idx : 参数在数组中的下标
-//   p       : 指向该参数的 param_t
-//   selected: 是否为当前选中行
 static void draw_row(uint8 row_idx, const param_t *p, uint8 selected)
 {
     uint16 y = (uint16)ROW_START_Y + (uint16)row_idx * ROW_H;
 
-    // 用背景色擦除整行
     ips_driver_fill_rect(0, y, SCREEN_W, ROW_H, CLR_BG);
 
-    // 选中指示符 "->" 或空格
     if (selected)
         ips_driver_show_str(ROW_LEFT, y + 2, "->", CLR_FG, CLR_BG);
     else
         ips_driver_show_str(ROW_LEFT, y + 2, "  ", CLR_FG, CLR_BG);
 
-    // 标签（"->" 之后空一格）
     ips_driver_show_str(ROW_LEFT + INDICATOR_W + 2, y + 2, p->label, CLR_FG, CLR_BG);
 
-    // 数值（右对齐，留右边距）
     char buf[16];
     if (p->is_int == 1)
         sprintf(buf, "%d",  *(int32_t*)(p->value));
@@ -198,7 +144,6 @@ static void draw_row(uint8 row_idx, const param_t *p, uint8 selected)
             sprintf(buf, "%.2f", (double)v);
     }
 
-    // 计算右对齐起始x
     uint8 vlen = 0;
     const char *bp = buf;
     while (*bp++) vlen++;
@@ -208,12 +153,10 @@ static void draw_row(uint8 row_idx, const param_t *p, uint8 selected)
     ips_driver_show_str(vx, y + 2, buf, CLR_FG, CLR_BG);
 }
 
-// 只刷新行右侧的数值区域，不碰指示符和标签，用于只读行的静默更新（无闪烁）
 static void draw_value_only(uint8 row_idx, const param_t *p)
 {
     uint16 y = (uint16)ROW_START_Y + (uint16)row_idx * ROW_H;
 
-    // 格式化新数值
     char buf[16];
     if (p->is_int == 1)
         sprintf(buf, "%d",  *(int32_t*)(p->value));
@@ -228,21 +171,17 @@ static void draw_value_only(uint8 row_idx, const param_t *p)
     else
         sprintf(buf, "%.2f", (double)*(float*)(p->value));
 
-    // 计算右对齐起始x（与 draw_row 保持一致）
     uint8 vlen = 0;
     const char *bp = buf;
     while (*bp++) vlen++;
     uint16 vx = SCREEN_W - ROW_RIGHT - (uint16)vlen * 8;
     if (vx > SCREEN_W) vx = 0;
 
-    // 只擦除数值区域（右侧固定宽度），再写入新值
-    // 数值最多12字符（如"-116.397428"）= 96px，留足擦除宽度
     uint16 erase_x = SCREEN_W - ROW_RIGHT - 12 * 8;
     ips_driver_fill_rect(erase_x, y, SCREEN_W - ROW_RIGHT - erase_x, ROW_H, CLR_BG);
     ips_driver_show_str(vx, y + 2, buf, CLR_FG, CLR_BG);
 }
 
-// 重绘当前页面所有内容（仅切页时调用）
 static void draw_full_page(void)
 {
     ips_driver_clear(CLR_BG);
@@ -254,32 +193,19 @@ static void draw_full_page(void)
         draw_row(i, &params[i], (i == g_sel));
 }
 
-
-
-
-
-
-
-
-
-
-
 //==============================================================================
 // 公开 API
 //==============================================================================
-
 void ips_app_init(void)
 {
     ips_driver_init();
-    g_page = PAGE_GPS;
+    g_page = PAGE_HOME;
     g_sel  = 0;
     draw_full_page();
 }
 
-
 static float s_rdonly_cache[MAX_RDONLY_ROWS];
 
-// 定时任务：只有只读行的数值发生变化时才重绘，避免闪烁
 void ips_app_task(void)
 {
     uint8 count = 0;
@@ -290,22 +216,21 @@ void ips_app_task(void)
     {
         if (!params[i].rdonly) continue;
 
-        // 读取当前值（统一转成 float 做缓存比较）
         float cur;
         if      (params[i].is_int == 1) cur = (float)*(int32_t*)(params[i].value);
         else if (params[i].is_int == 2) cur = (float)*(uint32_t*)(params[i].value);
         else if (params[i].is_int == 3) cur = (float)*(uint8_t*)(params[i].value);
         else if (params[i].is_int == 4) cur = (float)*(double*)(params[i].value);
         else                            cur = *(float*)(params[i].value);
+
         if (cur != s_rdonly_cache[i])
         {
             s_rdonly_cache[i] = cur;
-            draw_value_only(i, &params[i]);  // 只刷新数值，不刷整行，无闪烁
+            draw_value_only(i, &params[i]);
         }
     }
 }
 
-// 切换到下一页
 void ips_app_next_page(void)
 {
     g_page = (page_e)((g_page + 1) % PAGE_COUNT);
@@ -314,7 +239,6 @@ void ips_app_next_page(void)
     draw_full_page();
 }
 
-// 切换到上一页
 void ips_app_prev_page(void)
 {
     g_page = (page_e)((g_page + PAGE_COUNT - 1) % PAGE_COUNT);
@@ -323,7 +247,6 @@ void ips_app_prev_page(void)
     draw_full_page();
 }
 
-// 向上选择（循环），立即重绘两行
 void ips_app_sel_up(void)
 {
     uint8 count = 0;
@@ -336,7 +259,6 @@ void ips_app_sel_up(void)
     draw_row(g_sel,   &params[g_sel],   1);
 }
 
-// 向下选择（循环），立即重绘两行
 void ips_app_sel_down(void)
 {
     uint8 count = 0;
@@ -349,7 +271,6 @@ void ips_app_sel_down(void)
     draw_row(g_sel,   &params[g_sel],   1);
 }
 
-// 增减参数值，立即重绘当前行
 void ips_app_adjust(int8 direction)
 {
     uint8 count = 0;
