@@ -130,6 +130,7 @@ void zero_compensation(void)
             last_process_count = g_imu_diag_stat.process_count;
             stable_frame_count++;
         }
+
     }
 
     // ========== 调用机械零位补偿 ==========
@@ -138,8 +139,6 @@ void zero_compensation(void)
 
     // 方法 2：自动捕获当前姿态为零位（推荐）
     imu_capture_control_zero();  // ✅ 把当前姿态记录为机械零位
-
-
 }
 
 

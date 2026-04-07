@@ -98,7 +98,7 @@ void wireless_debug_init(void)
     g_wifi_connected = 1;
     printf("[WIRELESS] WiFi debug init OK. Module IP: %s\r\n", wifi_spi_ip_addr_port);
     printf("[WIRELESS] Param CH1~CH8: kp/ki/kd inner_kp/ki nav_gain target_rpm ctrl_mode\r\n");
-    printf("[WIRELESS] Osc   CH1~CH8: roll servo_out rpm speed_ms nav_err yaw motor_out target_rpm\r\n");
+    printf("[WIRELESS] Osc   CH1~CH8: roll_ctrl servo_out rpm speed_ms nav_err yaw motor_out target_rpm\r\n");
 }
 
 /* ===========================================================
@@ -200,7 +200,7 @@ static void wireless_send_oscilloscope(void)
     seekfree_assistant_oscilloscope_struct osc;
 
     /* 填充 8 个波形通道（覆盖平衡控制 + 速度 + 导航调试）*/
-    osc.data[OSC_CH_ROLL_ANGLE]      = roll_kalman;       /* 补偿后横滚角（°）roll_ctrl_angle*/
+    osc.data[OSC_CH_ROLL_ANGLE]      = roll_ctrl_angle;   /* 控制用横滚角（°，已扣除机械零位） */
     osc.data[OSC_CH_SERVO_OUTPUT]    = g_balance_pid_output;   /* 舵机最终输出（duty counts）*/
     osc.data[OSC_CH_MOTOR_RPM]       = motor_speed_rpm;        /* 电机实际转速（RPM）*/
     osc.data[OSC_CH_MOTOR_SPEED_MS]  = motor_speed_m_s;        /* [新增] 车体线速度（m/s）*/

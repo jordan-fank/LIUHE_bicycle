@@ -15,6 +15,8 @@
  * 操作流程：
  *   [勘线] 车在发车区   → KEY4 长按（第1次）→ nav_set_ref_start()
  *   [勘线] 推车到掉头区 → KEY4 长按（第2次）→ nav_record_waypoint() + 自动 Flash 保存
+ *   [重勘] 已有旧路线时 → KEY4 长按（第1次）→ 清旧路线并记录新的 ref_start
+ *   [重勘] 推车到掉头区 → KEY4 长按（第2次）→ 记录新路点并覆盖保存
  *   [比赛] 车归发车区   → KEY3 长按 → 启动
  *   [急停] 运行中        → KEY3 长按 → 立即停车
  *
@@ -87,6 +89,9 @@ extern volatile float g_s1_finish_brake_dist;
 extern volatile float g_s1_resume_thresh;
 extern volatile float g_s1_accel_step;
 
+extern uint8_t s_survey_step;             //堪线路点数，科目1堪线==2即堪线完成
+
+
 
 /* ================================================================
  * API
@@ -104,9 +109,13 @@ void subject1_task(void);
 void subject1_start(void);
 void subject1_stop(void);
 
-/* KEY4 长按触发（勘线，每次上电至多调用 2 次）：
- *   第1次：nav_set_ref_start()，记录发车区 GPS 参考起点
- *   第2次：nav_record_waypoint() + 自动 Flash 保存 */
+/* KEY4 长按触发（勘线/重勘）：
+ *   无历史路线时：
+ *     第1次：nav_set_ref_start()，记录发车区 GPS 参考起点
+ *     第2次：nav_record_waypoint() + 自动 Flash 保存
+ *   已有历史路线时：
+ *     第1次：清空旧路线并记录新的 ref_start
+ *     第2次：记录新 waypoint 并覆盖保存 */
 void subject1_survey(void);
 
 

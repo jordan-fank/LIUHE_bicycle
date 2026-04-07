@@ -28,8 +28,11 @@
 /* ================================================================
  * 全局状态
  * ================================================================ */
+/* 科目2状态机当前状态，用于区分待机、运行中和完成态。 */
 subject2_state_t g_subject2_state = SUBJ2_STATE_IDLE;
+/* 科目2八字绕桩全程保持的恒定目标转速。 */
 volatile float g_s2_rpm         = SUBJ2_RPM;
+/* 八字绕桩的等效转弯半径，决定每个 120 度圆弧段的距离。 */
 volatile float g_s2_turn_radius = SUBJ2_TURN_RADIUS_M;
 
 /* ================================================================
@@ -58,6 +61,7 @@ static void s2_configure_segments(void)
 {
     const float arc = 2.0f * 3.14159f * g_s2_turn_radius / 3.0f;   /* 每 120° 弧段的弧长 */
 
+    /* 每次启动前先清空旧段，避免重复启动后导航段数组叠加。 */
     nav_clear_imu_segments();
 
     /* 段0：从发车区直行到交叉点 */
@@ -91,6 +95,7 @@ static void s2_configure_segments(void)
 
 void subject2_app_init(void)
 {
+    /* 初始化只复位科目2自身状态，不干预当前舵机控制模式。 */
     g_subject2_state = SUBJ2_STATE_IDLE;
 }
 
@@ -116,6 +121,7 @@ void subject2_start(void)
     /* 保存当前控制模式，切换到 LOW_SPEED */
     s2_prev_ctrl_mode    = g_servo_control_mode;
     g_servo_control_mode = SERVO_CTRL_MODE_LOW_SPEED;
+    /* 模式切换前清零积分，避免沿用上一控制模式残留的积分量。 */
     balance_pid.integral = 0.0f;   /* 切换模式时清零积分，防止跳变 */
     printf("[SUBJ2] Control mode → LOW_SPEED (was %u)\r\n", (unsigned)s2_prev_ctrl_mode);
 
@@ -128,10 +134,16 @@ void subject2_start(void)
     if (g_nav_state != NAV_STATE_NAVIGATING)
     {
         printf("[SUBJ2] Start FAILED: nav not running\r\n");
+        /* 导航启动失败时必须恢复原控制模式，避免系统停留在 LOW_SPEED。 */
         g_servo_control_mode = s2_prev_ctrl_mode;   /* 恢复 */
+        motor_output_set_enable(0u);
         return;
     }
 
+    /* 导航已正常进入运行态，此时才真正放行电机输出。 */
+    motor_output_set_enable(1u);
+
+    /* 仅在导航成功进入运行态后，才对外宣布科目2已启动。 */
     g_subject2_state = SUBJ2_STATE_RUNNING;
     printf("[SUBJ2] START! Figure-8 @ %.0f RPM, R=%.2fm\r\n",
            g_s2_rpm, g_s2_turn_radius);
@@ -142,8 +154,10 @@ void subject2_start(void)
  */
 void subject2_stop(void)
 {
+    /* 先停导航和电机，再恢复控制模式，避免退出时仍按八字段控车。 */
     nav_stop();
     motor_set_target_rpm(0.0f);
+    motor_output_set_enable(0u);
     balance_set_expect_angle(0.0f);
     lqr_set_expect_phi(0.0f);
 
@@ -171,12 +185,14 @@ void subject2_task(void)
     if (g_nav_state == NAV_STATE_DONE)
     {
         motor_set_target_rpm(0.0f);
+        motor_output_set_enable(0u);
         nav_stop();
         balance_set_expect_angle(0.0f);
         lqr_set_expect_phi(0.0f);
 
         /* 恢复控制模式 */
         g_servo_control_mode = s2_prev_ctrl_mode;
+        /* 退出 LOW_SPEED 前清零积分，防止把历史误差带回普通模式。 */
         balance_pid.integral = 0.0f;
 
         g_subject2_state = SUBJ2_STATE_DONE;

@@ -23,12 +23,15 @@ typedef struct {
 
 extern SpeedAssist_t speed_assist;
 extern volatile float target_motor_rpm;         // 目标速度 (单位：RPM)
+extern volatile uint8_t g_motor_output_enable;  // 电机输出使能；0=强制停转，1=按目标转速闭环
 
 void motor_pid_init(void);                             // 电机 PID 初始化
 void motor_control(void);                              // 电机控制
 void motor_set_target_rpm(float target_rpm);           // 设置目标电机转速
 void motor_set_params(float kp, float ki, float kd);   // 设置 PID 参数
 void motor_pid_reset(void);                            // 重置 PID 状态
+void motor_output_set_enable(uint8_t enable);          // 设置电机输出使能
+uint8_t motor_output_get_enable(void);                 // 读取电机输出使能状态
 
 // 速度辅助函数
 void speed_assist_init(float base_speed, float assist_gain, float max_boost);  // 速度辅助初始化

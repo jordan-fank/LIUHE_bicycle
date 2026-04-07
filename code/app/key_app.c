@@ -8,6 +8,8 @@
 #include "subject3_app.h"
 /* [新增 Flash持久化] */
 #include "config_flash.h"
+#include "motor_pid.h"
+#include "servo_pid.h"
 
 /**
  * @file key_app.c
@@ -17,9 +19,13 @@
  *   KEY1 短按/长按：减小当前选中参数（长按连续减）
  *   KEY1 双击：[新增 Flash持久化] 保存全部配置到 Flash
  *   KEY2 短按/长按：增大当前选中参数（长按连续增）
+ *   KEY2 双击：当前无业务功能，仅保留双击事件接口
  *   KEY3 短按：切换下一页
+ *   KEY3 双击：切换上一页
+ *   KEY3 长按：统一启停入口；Active=0 时手动测试启停，其余按 Active 对应科目启动/停止
  *   KEY4 短按：向下选参数
  *   KEY4 双击：向上选参数
+ *   KEY4 长按：按 Active 对应科目执行勘线
  *
  * 长按连续增减原理：
  *   key_driver 检测到长按后设置 KEY_EVENT_LONG（仅触发一次），
@@ -31,9 +37,57 @@
 static uint8_t s_key1_hold = 0;
 static uint8_t s_key2_hold = 0;
 
-/* [新增] 活跃科目选择：1=科目1, 2=科目2, 3=科目3
-   KEY2 双击循环切换，决定 KEY3/KEY4 长按分发到哪个科目 */
-uint8_t g_active_subject = 1u;
+/* [新增] 活跃科目选择：0=手动模式, 1=科目1, 2=科目2, 3=科目3
+   由 HOME 页 Active 参数直接调节，决定 KEY3/KEY4 长按分发到哪个科目。 */
+uint8_t g_active_subject = 0u;
+
+static uint8_t key_app_subject_running(void)
+{
+    if ((g_active_subject == 0u) && motor_output_get_enable()) return 1u;
+    if (g_subject1_state != SUBJ1_STATE_IDLE && g_subject1_state != SUBJ1_STATE_DONE) return 1u;
+    if (g_subject2_state != SUBJ2_STATE_IDLE && g_subject2_state != SUBJ2_STATE_DONE) return 1u;
+    if (g_subject3_state != SUBJ3_STATE_IDLE && g_subject3_state != SUBJ3_STATE_DONE) return 1u;
+    return 0u;
+}
+
+static uint8_t key_app_get_servo_mode_by_subject(uint8_t subject)
+{
+    if (subject == 0u)
+    {
+        return SERVO_CTRL_MODE_SIMPLE_PD;
+    }
+
+    if (subject == 2u)
+    {
+        return SERVO_CTRL_MODE_LOW_SPEED;
+    }
+
+    return SERVO_CTRL_MODE_CASCADE;
+}
+
+void active_subject_set(uint8_t subject)
+{
+    uint8_t new_subject = subject;
+
+    if (new_subject > 3u) new_subject = 3u;
+
+    if ((new_subject != g_active_subject) && key_app_subject_running())
+    {
+        printf("[KEY] Active subject switch blocked: stop current subject first.\r\n");
+        return;
+    }
+
+    g_active_subject = new_subject;
+    g_servo_control_mode = key_app_get_servo_mode_by_subject(new_subject);
+    /* 统一启停框架：切换 Active 只改变当前模式，不直接放行电机输出。
+       真正启动统一由 KEY3 长按触发，对应 start() 成功后再放行。 */
+    motor_output_set_enable(0u);
+
+    printf("[KEY] Active subject: %u, servo mode: %u, motor_en: %u\r\n",
+           (unsigned)g_active_subject,
+           (unsigned)g_servo_control_mode,
+           (unsigned)motor_output_get_enable());
+}
 
 void key_task(void)
 {
@@ -77,11 +131,7 @@ void key_task(void)
             s_key2_hold = 0;
             break;
         case KEY_EVENT_DOUBLE:
-            /* [新增] KEY2 双击 → 循环切换活跃科目 1→2→3→1...
-               切换后 KEY3/KEY4 长按的行为跟随变化 */
-            g_active_subject = (g_active_subject == 1u) ? 2u :
-                               (g_active_subject == 2u) ? 3u : 1u;
-            printf("[KEY] Active subject: %u\r\n", (unsigned)g_active_subject);
+            /* 保留双击事件接口，但不再用于切换 Active，避免打乱原有 IPS 参数调节框架。 */
             break;
         case KEY_EVENT_LONG:
             s_key2_hold = 1;
@@ -111,7 +161,22 @@ void key_task(void)
             break;
         case KEY_EVENT_LONG:
             /* [新增] 根据活跃科目分发启动/停止 */
-            if (g_active_subject == 1u)
+            if (g_active_subject == 0u)
+            {
+                if (motor_output_get_enable())
+                {
+                    motor_output_set_enable(0u);
+                    balance_set_expect_angle(0.0f);
+                    printf("[KEY] Active=0 manual test STOP. target=%.1f RPM\r\n", target_motor_rpm);
+                }
+                else
+                {
+                    motor_output_set_enable(1u);
+                    balance_set_expect_angle(0.0f);
+                    printf("[KEY] Active=0 manual test START. target=%.1f RPM\r\n", target_motor_rpm);
+                }
+            }
+            else if (g_active_subject == 1u)
             {
                 if (g_subject1_state == SUBJ1_STATE_IDLE || g_subject1_state == SUBJ1_STATE_DONE)
                     subject1_start();
@@ -152,7 +217,9 @@ void key_task(void)
         case KEY_EVENT_LONG:
             /* [新增] 根据活跃科目分发勘线
                科目2 无需勘线（段序列由参数自动计算）*/
-            if (g_active_subject == 1u)
+            if (g_active_subject == 0u)
+                printf("[KEY] Active=0 manual test mode: no survey action.\r\n");
+            else if (g_active_subject == 1u)
                 subject1_survey();
             else if (g_active_subject == 2u)
                 printf("[KEY] Subject 2: no survey needed. Just KEY3 to start.\r\n");

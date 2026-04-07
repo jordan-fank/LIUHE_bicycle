@@ -12,6 +12,7 @@
 
 #include "ips_app.h"
 #include "ips_driver.h"
+#include "key_app.h"
 
 //==============================================================================
 // 全局变量定义
@@ -199,7 +200,7 @@ static void draw_full_page(void)
 void ips_app_init(void)
 {
     ips_driver_init();
-    g_page = PAGE_HOME;
+    g_page = PAGE_IMU;
     g_sel  = 0;
     draw_full_page();
 }
@@ -280,12 +281,36 @@ void ips_app_adjust(int8 direction)
     param_t *p = &params[g_sel];
     if (p->rdonly) return;
 
-    if (p->is_int)
+    if (p->value == (void *)&g_active_subject)
+    {
+        int32_t v = (int32_t)g_active_subject + (int32_t)((float)direction * p->step);
+        if (v < (int32_t)p->min) v = (int32_t)p->min;
+        if (v > (int32_t)p->max) v = (int32_t)p->max;
+        active_subject_set((uint8_t)v);
+        draw_row(g_sel, p, 1);
+        return;
+    }
+
+    if (p->is_int == 1)
     {
         int32_t v = *(int32_t*)(p->value) + (int32_t)((float)direction * p->step);
         if (v < (int32_t)p->min) v = (int32_t)p->min;
         if (v > (int32_t)p->max) v = (int32_t)p->max;
         *(int32_t*)(p->value) = v;
+    }
+    else if (p->is_int == 2)
+    {
+        int32_t v = (int32_t)(*(uint32_t*)(p->value)) + (int32_t)((float)direction * p->step);
+        if (v < (int32_t)p->min) v = (int32_t)p->min;
+        if (v > (int32_t)p->max) v = (int32_t)p->max;
+        *(uint32_t*)(p->value) = (uint32_t)v;
+    }
+    else if (p->is_int == 3)
+    {
+        int32_t v = (int32_t)(*(uint8_t*)(p->value)) + (int32_t)((float)direction * p->step);
+        if (v < (int32_t)p->min) v = (int32_t)p->min;
+        if (v > (int32_t)p->max) v = (int32_t)p->max;
+        *(uint8_t*)(p->value) = (uint8_t)v;
     }
     else
     {

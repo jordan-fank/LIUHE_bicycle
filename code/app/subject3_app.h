@@ -87,6 +87,9 @@ extern volatile float g_s3_resume_thresh;
 extern volatile float g_s3_accel_step;
 
 
+extern uint8_t s3_survey_step;          //已堪线路点数
+
+
 /* ================================================================
  * API
  * ================================================================ */

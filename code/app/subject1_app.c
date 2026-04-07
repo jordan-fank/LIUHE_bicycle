@@ -31,29 +31,77 @@
 #include "motor_pid.h"
 #include "servo_pid.h"
 #include "lqr_balance.h"
-/* [Flash持久化] 勘线完成后自动保存路点到 Flash */
-#include "config_flash.h"
+
+#include "config_flash.h"                           //堪线完成自动进行路点保存
 
 #include <math.h>   /* fabsf */
 
 /* ================================================================
- * 全局状态
+ * 科目1关键全局变量
  * ================================================================ */
-subject1_state_t g_subject1_state = SUBJ1_STATE_IDLE;
-volatile float g_s1_high_rpm          = SUBJ1_HIGH_RPM;
-volatile float g_s1_mid_rpm           = SUBJ1_MID_RPM;
-volatile float g_s1_turn_rpm          = SUBJ1_TURN_RPM;
-volatile float g_s1_pre_brake_dist    = SUBJ1_PRE_BRAKE_DIST_M;
-volatile float g_s1_finish_brake_dist = SUBJ1_FINISH_BRAKE_DIST_M;
-volatile float g_s1_resume_thresh     = SUBJ1_RESUME_THRESH_DEG;
-volatile float g_s1_accel_step        = SUBJ1_ACCEL_STEP_RPM;
+subject1_state_t g_subject1_state = SUBJ1_STATE_IDLE;               //科目1目前，状态，分别为五个活跃状态
+volatile float g_s1_high_rpm          = SUBJ1_HIGH_RPM;             //去程和回程直线段最高的目标速度
+volatile float g_s1_mid_rpm           = SUBJ1_MID_RPM;              //去程预减速和回程直线段的最高目标速度
+volatile float g_s1_turn_rpm          = SUBJ1_TURN_RPM;             //掉头阶段保持的低速目标转速
+volatile float g_s1_pre_brake_dist    = SUBJ1_PRE_BRAKE_DIST_M;     //接近掉头鲁甸时触发预减速的距离阈值
+volatile float g_s1_finish_brake_dist = SUBJ1_FINISH_BRAKE_DIST_M;  //接近发车区终点时触发预减速的的距离阈值
+volatile float g_s1_resume_thresh     = SUBJ1_RESUME_THRESH_DEG;    //掉头结束回复加速的航向误差阈值/角度
+volatile float g_s1_accel_step        = SUBJ1_ACCEL_STEP_RPM;       //返程阶段每个 100ms 周期提高的转速步进，单位 RPM
 
 /* ================================================================
- * 内部变量
+ * 内部变量s_survey_step
  * ================================================================ */
 
 /* 勘线步骤计数（0=未勘线, 1=已记录起点, 2=已记录路点，可以起跑）*/
-static uint8_t s_survey_step = 0u;
+uint8_t s_survey_step = 0u;
+
+/* 科目1原始勘线路线备份：
+ * nav_app 在去程结束后会把工作路点切换成“返回起点”单路点。
+ * 为了保证同一上电周期内可以重复启动科目1，这里单独保存一份
+ * “勘线/Flash恢复后的原始去程路线”，每次 start/stop/done 时按需恢复。 
+ * */
+
+static uint8_t        s1_has_ref = 0u;                  //备份路线是否包含有效起点参考
+static double         s1_ref_lat = 0.0;                 //备份路线中的起点参考纬度。
+static double         s1_ref_lon = 0.0;                 //备份路线中的起点参考经度。 
+
+/* 备份的原始去程路点数组，避免 nav_app 在回程阶段覆盖工作路线后丢失原始勘线。 */
+static nav_waypoint_t s1_waypoints[NAV_MAX_WAYPOINTS];
+
+
+
+static uint8_t        s1_wp_count = 0u;                 /* 当前备份路点数量。 */
+
+static void subject1_clear_route_backup(void)
+{
+    /* 清空科目1本地原始路线备份，供重新勘线时重新建立。 */
+    s1_has_ref  = 0u;
+    s1_ref_lat  = 0.0;
+    s1_ref_lon  = 0.0;
+    s1_wp_count = 0u;
+}
+
+//导出之前的勘测路线
+static void subject1_snapshot_route_from_nav(void)
+{
+    /* 从 nav_app 工作区导出当前路线，保存为可重复起跑的原始副本。 */
+    nav_export_gps_config(&s1_has_ref, &s1_ref_lat, &s1_ref_lon,
+                          &s1_wp_count, s1_waypoints);
+}
+
+static uint8_t subject1_restore_route_to_nav(void)
+{
+    if (!s1_has_ref || s1_wp_count == 0u)
+    {
+        /* 没有有效备份时拒绝恢复，防止把无效路线写回导航模块。 */
+        return 0u;
+    }
+
+    /* 把原始勘线路线重新装回 nav_app，保证 stop/done 后还能再次按原路线启动。 */
+    nav_import_gps_config(s1_has_ref, s1_ref_lat, s1_ref_lon,
+                          s1_wp_count, s1_waypoints);
+    return 1u;
+}
 
 
 /* ================================================================
@@ -71,15 +119,21 @@ void subject1_app_init(void)
     /* 根据 Flash 恢复的 GPS 状态自动推断勘线进度，避免每次上电重新勘线 */
     if (nav_has_ref_start() && nav_get_waypoint_count() > 0u)
     {
+        /* 既有起点又有掉头路点，说明可以直接启动科目1。 */
         s_survey_step = 2u;
+        subject1_snapshot_route_from_nav();
     }
     else if (nav_has_ref_start())
     {
+        /* 只有起点没有掉头点，说明勘线只完成了一半。 */
         s_survey_step = 1u;
+        subject1_snapshot_route_from_nav();
     }
     else
     {
+        /* 没有任何历史勘线数据时，清空本地备份和进度。 */
         s_survey_step = 0u;
+        subject1_clear_route_backup();
     }
 }
 
@@ -92,17 +146,38 @@ void subject1_app_init(void)
  */
 void subject1_survey(void)
 {
-    if (g_subject1_state != SUBJ1_STATE_IDLE)
+    if (g_subject1_state != SUBJ1_STATE_IDLE && g_subject1_state != SUBJ1_STATE_DONE)
     {
         printf("[SUBJ1] Survey blocked: race is running, stop first\r\n");
         return;
     }
 
+    /* DONE 也视为“已结束、不在运行”。
+       进入重新勘线流程前先统一回到 IDLE，避免界面显示仍停留在 DONE。 */
+    if (g_subject1_state == SUBJ1_STATE_DONE)
+    {
+        g_subject1_state = SUBJ1_STATE_IDLE;
+    }
+
+    /* 若当前已存在完整勘线路线，则新的第一次 KEY4 长按视为“重新勘线开始”：
+       清空旧工作路点和本地备份，然后立即把当前位置记录为新的 ref_start。 */
+    if (s_survey_step >= 2u)
+    {
+        nav_clear_waypoints();
+        subject1_clear_route_backup();
+        s_survey_step = 0u;
+        printf("[SUBJ1] Re-survey started: old route cleared, recording new ref_start.\r\n");
+    }
+
+    //勘测起点
     if (s_survey_step == 0u)
     {
+        /* 第一次勘线先记录起点参考，为后续路点建立统一局部坐标基准。 */
         nav_set_ref_start();
         if (nav_has_ref_start())
         {
+            /* 起点成功记录后立即同步备份，防止后续工作路点变化覆盖该信息。 */
+            subject1_snapshot_route_from_nav();
             s_survey_step = 1u;
             printf("[SUBJ1] Survey 1/2: ref_start recorded. Move to turn-around point.\r\n");
         }
@@ -111,12 +186,17 @@ void subject1_survey(void)
             printf("[SUBJ1] Survey 1/2 FAILED: GPS invalid\r\n");
         }
     }
+
+    //勘测拐点
     else if (s_survey_step == 1u)
     {
         uint8_t wp_before = nav_get_waypoint_count();
+        /* 第二次勘线记录掉头点，这也是去程导航的唯一目标路点。 */
         nav_record_waypoint(0.0f, SUBJ1_WP_RADIUS);
         if (nav_get_waypoint_count() > wp_before)
         {
+            /* 路点录入成功后立即备份完整路线，供后续重复启动恢复。 */
+            subject1_snapshot_route_from_nav();
             s_survey_step = 2u;
             /* 勘线完成，立即保存 GPS 路点 + 全部 PID 参数到 Flash */
             config_flash_save();
@@ -151,7 +231,13 @@ void subject1_start(void)
                (unsigned)s_survey_step);
         return;
     }
+    if (!subject1_restore_route_to_nav())
+    {
+        printf("[SUBJ1] Start FAILED: route backup missing, survey again.\r\n");
+        return;
+    }
 
+    /* 起跑前先恢复原始去程路线，再让 nav_app 进入 GPS 导航状态。 */
     nav_start_gps();
 
     if (g_nav_state != NAV_STATE_NAVIGATING)
@@ -160,7 +246,10 @@ void subject1_start(void)
         return;
     }
 
+    /* 启动成功后先以高速进入去程。 */
     motor_set_target_rpm(g_s1_high_rpm);
+    /* 统一启停框架：只有 start 成功后才放行电机输出。 */
+    motor_output_set_enable(1u);
     g_subject1_state = SUBJ1_STATE_GO;
     printf("[SUBJ1] START! GO @ %.0f RPM\r\n", g_s1_high_rpm);
 }
@@ -170,8 +259,13 @@ void subject1_start(void)
  */
 void subject1_stop(void)
 {
+    /* 先停导航，避免恢复路线时 nav_app 仍在处理旧运行状态。 */
     nav_stop();
+    /* 紧急停止也恢复原始路线，保证同一上电周期内还能再次起跑。 */
+    (void)subject1_restore_route_to_nav();
+    /* 同时清零电机和姿态目标，避免停下后残留控制量。 */
     motor_set_target_rpm(0.0f);
+    motor_output_set_enable(0u);
     balance_set_expect_angle(0.0f);
     lqr_set_expect_phi(0.0f);
     g_subject1_state = SUBJ1_STATE_IDLE;
@@ -202,6 +296,7 @@ void subject1_task(void)
             {
                 /* 立即切到中速，避免继续以全速冲入制动区 */
                 motor_set_target_rpm(g_s1_mid_rpm);
+                /* 切到 GO_BRAKE 后，后续每个周期都会按剩余距离继续线性降速。 */
                 g_subject1_state = SUBJ1_STATE_GO_BRAKE;
                 printf("[SUBJ1] → GO_BRAKE @ dist=%.1fm\r\n", g_nav_dist_to_wp);
             }
@@ -217,6 +312,7 @@ void subject1_task(void)
                 float frac = g_nav_dist_to_wp / g_s1_pre_brake_dist;
                 if (frac < 0.0f) { frac = 0.0f; }
                 if (frac > 1.0f) { frac = 1.0f; }
+                /* 按剩余距离比例把速度从 MID 连续降到 TURN，避免硬切到低速。 */
                 float rpm = g_s1_turn_rpm + (g_s1_mid_rpm - g_s1_turn_rpm) * frac;
                 motor_set_target_rpm(rpm);
             }
@@ -224,6 +320,7 @@ void subject1_task(void)
             /* 到达掉头路点 → 切换 GPS 回程（保留 GO 阶段漂移修正）*/
             if (g_nav_state == NAV_STATE_DONE)
             {
+                /* 去程完成后清空工作路点，并改成“返回起点”这一条回程目标。 */
                 nav_clear_waypoints();
                 nav_add_waypoint_at_ref_start(SUBJ1_WP_RADIUS);
                 /* [关键] keep_drift：保留 GO 阶段在起点算出的漂移修正量
@@ -238,6 +335,7 @@ void subject1_task(void)
                     break;
                 }
 
+                /* 回程导航建立后先低速掉头，等待车头重新对准起点方向。 */
                 motor_set_target_rpm(g_s1_turn_rpm);
                 g_subject1_state = SUBJ1_STATE_UTURN;
                 printf("[SUBJ1] → UTURN @ %.0f RPM\r\n", g_s1_turn_rpm);
@@ -254,6 +352,7 @@ void subject1_task(void)
             {
                 /* 航向已对准，出弯开始加速 */
                 motor_set_target_rpm(g_s1_mid_rpm);
+                /* 先以中速进入 RETURN，再由 RETURN 状态逐步推回高速。 */
                 g_subject1_state = SUBJ1_STATE_RETURN;
                 printf("[SUBJ1] → RETURN, heading_err=%.1f°\r\n", g_nav_heading_error);
             }
@@ -273,6 +372,7 @@ void subject1_task(void)
                 float cur = (float)target_motor_rpm;
                 if (cur < g_s1_high_rpm)
                 {
+                    /* 固定步进加速可减小掉头结束后突然满速带来的姿态冲击。 */
                     cur += g_s1_accel_step;
                     if (cur > g_s1_high_rpm) { cur = g_s1_high_rpm; }
                     motor_set_target_rpm(cur);
@@ -282,8 +382,11 @@ void subject1_task(void)
             /* GPS 到达起点 → 停车 */
             if (g_nav_state == NAV_STATE_DONE)
             {
+                /* 回到起点后恢复原始路线，为下一次 start 继续使用最初勘线路径。 */
                 motor_set_target_rpm(0.0f);
+                motor_output_set_enable(0u);
                 nav_stop();
+                (void)subject1_restore_route_to_nav();
                 balance_set_expect_angle(0.0f);
                 lqr_set_expect_phi(0.0f);
                 g_subject1_state = SUBJ1_STATE_DONE;

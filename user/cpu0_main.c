@@ -7,6 +7,7 @@
 
 #include "cpu0_main.h"
 #include "servo_app.h"
+#include "motor_pid.h"
 #include "balance_control_mode.h"
 /* [新增] 无线调试模块头文件 */
 #include "wireless_debug_app.h"
@@ -18,6 +19,7 @@
 #include "subject2_app.h"
 /* [新增 科目3] */
 #include "subject3_app.h"
+#include "key_app.h"
 /* [新增 Flash持久化] */
 #include "config_flash.h"
 #include "isr.h"
@@ -58,13 +60,13 @@ int core0_main(void)
 
 
     imu_all_init();                                  // IMU硬件初始化 + 四元数初始化
-    //imu_calibrate_gyro();                            //IMU精确校准耗时60S--比赛用
-    imu_calibrate_gyro_temp();                     // 临时零偏值仅适合快速联调，不适合作为精度验证基准
+    imu_calibrate_gyro();                            //IMU精确校准耗时60S--比赛用
+    //imu_calibrate_gyro_temp();                     // 临时零偏值仅适合快速联调，不适合作为精度验证基准
     g_home_init_imu_ok = 1u;
 
 
     pit_ms_init(CCU60_CH1, IMU_PERIOD_MS);          // 定时中断初始化->5MS IMU数据采集
-    zero_compensation();                            //机械零位捕获，在平衡控制关闭状态下完成
+    zero_compensation();                            //机械零位捕获，在平衡控制关闭状态下完成--小BUG-无超时保护
 
 
 
@@ -75,15 +77,16 @@ int core0_main(void)
        两套控制器都保留初始化，不打乱现有工程结构。
     */
 #if (BALANCE_CONTROL_MODE == BALANCE_CONTROL_MODE_PID)
-    balance_control_set_enable(1U);
+        balance_control_set_enable(1U);
 #else
-    lqr_balance_set_enable(1U);
+        lqr_balance_set_enable(1U);
 #endif
 
 
 
     motor_init();                                    //电机初始化--UART1初始化+开启UART1接受中断        
     motor_pid_init();                                // 初始化电机速度PID
+    motor_output_set_enable(0u);                     // 统一启停框架：所有模式上电默认不放行电机输出
     uart_receiver_init();
     
     pit_ms_init(CCU61_CH0, 20);                      // 定时中断初始化->20MS 串口数据处理
@@ -113,6 +116,7 @@ int core0_main(void)
     subject1_app_init();                            // [新增 科目1] 科目1状态机初始化
     subject2_app_init();                            // [新增 科目2] 科目2状态机初始化（无Flash，段序列由参数计算）
     subject3_app_init();                            // [新增 科目3] 科目3状态机初始化（从Flash page 10 恢复路点）
+    active_subject_set(g_active_subject);           // 根据当前活跃科目自动同步舵机控制模式
 
     scheduler_init();                               // 调度初始化
     ips_app_init();    // Flash 加载和各科目初始化完成后重绘 IPS，HOME 页显示最终状态

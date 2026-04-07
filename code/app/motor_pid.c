@@ -17,10 +17,14 @@ volatile float g_motor_output_limit = 5000.0f;   // 原 MOTOR_LIMIT
 
 /* [新增] 电机 PID 输出值，供无线调试模块（wireless_debug_app.c）读取波形 */
 volatile float g_motor_pid_output = 0.0f;
+/* 电机输出总使能：
+   0 = 不论 target_motor_rpm 设成多少，都强制输出 0；
+   1 = 按目标转速正常执行 20ms 速度闭环。 */
+volatile uint8_t g_motor_output_enable = 0u;
 
 
 PID_T motor_pid;                    // 速度PID结构体
-volatile float target_motor_rpm = 1000.0f;      // 目标速度（RPM）
+volatile float target_motor_rpm = 600.0f;      // 目标速度（RPM）
 
 SpeedAssist_t speed_assist;         // Speed assist controller
 
@@ -70,6 +74,15 @@ void motor_control(void)
     pid_set_target(&motor_pid, target_motor_rpm);
     target_motor_speed_m_s = motor_rpm_to_m_s(target_motor_rpm);    //电机目标速度
 
+    /* Active=0 手动测试模式下，若尚未按 KEY3 长按放行，则保持电机停转。
+       这里不改 target_motor_rpm 本身，方便 IPS 继续显示/调节预设目标转速。 */
+    if (0u == g_motor_output_enable)
+    {
+        g_motor_pid_output = 0.0f;
+        motor_set(0);
+        return;
+    }
+
     // 3. 计算增量式PID输出
     float pid_output = pid_calculate_incremental(&motor_pid, current_speed);
 
@@ -118,4 +131,20 @@ void motor_set_params(float kp, float ki, float kd)
 void motor_pid_reset(void)
 {
     pid_reset(&motor_pid);
+}
+
+void motor_output_set_enable(uint8_t enable)
+{
+    g_motor_output_enable = (enable != 0u) ? 1u : 0u;
+
+    /* 每次切换电机输出状态都清掉 PID 历史量，并立即打零占空比，
+       避免重新放行时带着旧积分/旧增量猛冲。 */
+    pid_reset(&motor_pid);
+    g_motor_pid_output = 0.0f;
+    motor_set(0);
+}
+
+uint8_t motor_output_get_enable(void)
+{
+    return g_motor_output_enable;
 }
